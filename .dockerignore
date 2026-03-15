@@ -1,0 +1,13 @@
+**/target/
+**/.idea/
+**/*.iml
+**/.classpath
+**/.project
+**/.settings/
+**/bin/
+.git
+.gitignore
+*.md
+docs/
+.claude/
+.env

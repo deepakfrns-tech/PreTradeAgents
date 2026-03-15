@@ -7,33 +7,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- CLAUDE.md rewritten to be concise (purpose, repo map, rules only) per best practices
-- `.claude/settings.json` with permissions (allowed/denied commands)
-- `.claude/skills/` — 4 reusable AI workflow skills:
-  - `code-review/SKILL.md` — code review checklist with project-specific rules
-  - `refactor/SKILL.md` — safe refactoring playbook with pre/post checklists
-  - `debug/SKILL.md` — systematic debugging workflow with common failure patterns
-  - `release/SKILL.md` — release procedure with build verification steps
-- `.claude/hooks/README.md` — guardrail documentation for automated checks
-- `docs/decisions/` — Architecture Decision Records (ADRs):
-  - ADR-001: Multi-agent microservice architecture
-  - ADR-002: Claude AI for analysis and learning
-  - ADR-003: Independent Maven modules (no parent POM)
-- `docs/runbooks/` — Operational guides:
-  - `build-and-deploy.md` — full build, run, and troubleshooting
-  - `database-operations.md` — schema changes, JSONB queries, migration rules
-- Local `CLAUDE.md` files for each critical module:
-  - `shared-db/CLAUDE.md` — migration danger zones, entity-schema mapping
-  - `shared-utils/CLAUDE.md` — utility class rules and common changes
-  - `agent-market-analyst/CLAUDE.md` — collector architecture, scoring weights
-  - `agent-trade-executor/CLAUDE.md` — trade lifecycle, JSONB fields
-  - `agent-learning-summary/CLAUDE.md` — Claude Opus usage, lookback queries
+- Docker Compose local deployment (`docker-compose.yml`) — one command to run everything
+- Dockerfiles for all 3 agents (multi-stage builds with JRE-alpine runtime)
+- `.dockerignore` to optimize Docker build context
+- `.env.example` template for environment variables
+- Build scripts: `scripts/build.sh`, `scripts/test.sh`, `scripts/local-deploy.sh`
+- `.claude/skills/doc-update/SKILL.md` — mandatory doc-update workflow skill
+- Pre-commit hook in `.claude/settings.json` — reminds to update docs before committing
+- `docs/runbooks/local-deployment.md` — Docker and manual deployment guide
+- Mandatory doc-update rules added to `CLAUDE.md` (MUST update CHANGELOG, COMMIT_LOG, module CLAUDE.md on every change)
 
 ### Changed
-- CLAUDE.md restructured from verbose guide to focused north-star document
-- Previous detailed content moved to docs/architecture.md and local CLAUDE.md files
+- CLAUDE.md updated with Docker commands and mandatory doc-update section
+- `.claude/settings.json` updated with Docker/script permissions and pre-commit hook
+- `.claude/hooks/README.md` rewritten with active hook documentation
+- README.md updated with Quick Start (Docker), scripts table, and deployment docs
+- `.gitignore` updated with Docker entries
 
 ### Previously Added
+- CLAUDE.md rewritten to be concise (purpose, repo map, rules only) per best practices
+- `.claude/settings.json` with permissions (allowed/denied commands)
+- `.claude/skills/` — 4 reusable AI workflow skills (code-review, refactor, debug, release)
+- `.claude/hooks/README.md` — guardrail documentation for automated checks
+- `docs/decisions/` — 3 Architecture Decision Records (ADRs)
+- `docs/runbooks/` — Operational guides (build-and-deploy, database-operations)
+- Local `CLAUDE.md` files for all 5 modules
 - README.md with project overview, setup instructions, and usage guide
 - docs/architecture.md with system design, data flow diagrams, and module relationships
 - CHANGELOG.md for tracking version history

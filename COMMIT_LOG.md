@@ -14,6 +14,40 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-15
 
+### Commit: Add local deployment, mandatory doc-update rules, and build scripts
+
+**Files added:**
+- `docker-compose.yml` - Full local deployment (PostgreSQL + 3 agents)
+- `agent-market-analyst/Dockerfile` - Multi-stage build for Agent 1
+- `agent-trade-executor/Dockerfile` - Multi-stage build for Agent 2
+- `agent-learning-summary/Dockerfile` - Multi-stage build for Agent 3
+- `.dockerignore` - Docker build context optimization
+- `.env.example` - Environment variable template
+- `scripts/build.sh` - Build all modules in correct order
+- `scripts/test.sh` - Run tests across all or specific modules
+- `scripts/local-deploy.sh` - Docker Compose deployment wrapper (up/down/restart/logs/status)
+- `.claude/skills/doc-update/SKILL.md` - Mandatory doc-update workflow
+- `docs/runbooks/local-deployment.md` - Docker and manual deployment runbook
+
+**Files modified:**
+- `CLAUDE.md` - Added Docker commands, mandatory doc-update rules section
+- `.claude/settings.json` - Added Docker/script permissions, pre-commit hook
+- `.claude/hooks/README.md` - Rewritten with active hook documentation
+- `README.md` - Added Quick Start (Docker), scripts table, deployment docs
+- `.gitignore` - Added Docker entries
+- `CHANGELOG.md` - Updated with all changes
+- `COMMIT_LOG.md` - This entry
+
+**Functional impact:**
+- Project is now locally deployable with a single command (`./scripts/local-deploy.sh up`)
+- Claude is now mandated to update docs (CHANGELOG, COMMIT_LOG, module CLAUDE.md) on every change
+- Pre-commit hook reminds about doc updates before committing
+- Build/test/deploy scripts eliminate manual multi-step processes
+
+**Breaking changes:** None
+
+---
+
 ### Commit: Apply AI-friendly best practices (tweet-inspired restructure)
 
 **Files added:**

@@ -17,6 +17,8 @@ PreTradeAgents/
 │   ├── architecture.md
 │   ├── decisions/               # Architecture Decision Records
 │   └── runbooks/                # Operational guides
+├── docker-compose.yml           # Local deployment (all agents + PostgreSQL)
+├── scripts/                     # Build, test, and deployment scripts
 └── .claude/
     ├── settings.json            # Claude Code project settings
     ├── skills/                  # Reusable AI workflows
@@ -43,6 +45,19 @@ Each module has its own `CLAUDE.md` with module-specific context.
 - Never call NSE API without session warmup (hit base URL first)
 - Never create inter-agent dependencies — agents communicate only through the database
 
+### MANDATORY: Update Docs on Every Change
+
+**After every code change, you MUST update these files before committing:**
+
+1. **`CHANGELOG.md`** — Add entry under `[Unreleased]` describing what changed (Added/Changed/Fixed/Removed)
+2. **`COMMIT_LOG.md`** — Add entry with: files changed, functional impact, breaking changes
+3. **Module `CLAUDE.md`** — If you changed a module's behavior, update its local CLAUDE.md
+4. **`docs/architecture.md`** — If you changed system design, data flow, or module relationships
+5. **`docs/decisions/`** — If you made a significant architecture decision, create a new ADR
+6. **`docs/runbooks/`** — If you changed build, deploy, or operational procedures
+
+**This is not optional.** Stale docs are worse than no docs. Update them as part of the same commit.
+
 ### Environment Variables
 
 ```
@@ -53,11 +68,23 @@ DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, ANTHROPIC_API_KEY
 
 ```bash
 # Build everything
-cd shared-db && mvn clean install && cd .. && cd shared-utils && mvn clean install && cd .. && cd agent-market-analyst && mvn clean package && cd .. && cd agent-trade-executor && mvn clean package && cd .. && cd agent-learning-summary && mvn clean package && cd ..
+./scripts/build.sh
 
-# Test a module
+# Test everything
+./scripts/test.sh
+
+# Local deployment (Docker)
+docker compose up -d            # Start all services
+docker compose down             # Stop all services
+docker compose logs -f          # Tail logs
+
+# Build + run without Docker
+cd shared-db && mvn clean install && cd .. && cd shared-utils && mvn clean install && cd ..
+cd agent-market-analyst && mvn clean package && cd ..
+cd agent-trade-executor && mvn clean package && cd ..
+cd agent-learning-summary && mvn clean package && cd ..
+java -jar agent-market-analyst/target/agent-market-analyst-1.0.0-SNAPSHOT.jar
+
+# Test a single module
 cd <module> && mvn test
-
-# Run an agent
-java -jar <module>/target/<module>-1.0.0-SNAPSHOT.jar
 ```

@@ -47,3 +47,6 @@ Thumbs.db
 
 # Spring Boot
 *.pid
+
+# Docker
+docker-compose.override.yml
