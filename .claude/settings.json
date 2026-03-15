@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn test*)",
+      "Bash(mvn clean*)",
+      "Bash(java -jar*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(ls*)",
+      "Bash(mkdir*)",
+      "Bash(docker compose*)",
+      "Bash(docker build*)",
+      "Bash(./scripts/*)",
+      "Bash(chmod*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(*DROP TABLE*)",
+      "Bash(*DROP DATABASE*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(docker system prune*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(git commit*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '⚠ PRE-COMMIT CHECK: Have you updated CHANGELOG.md, COMMIT_LOG.md, and relevant module CLAUDE.md files?'"
+          }
+        ]
+      }
+    ]
+  }
+}
