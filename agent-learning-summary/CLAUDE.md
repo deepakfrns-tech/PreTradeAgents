@@ -6,8 +6,22 @@ Agent 3. Runs post-market (~4:00 PM IST). Aggregates the day's trades into a Dai
 ## Data Flow
 
 ```
-PaperTrade (all day's trades) → DailySummary (aggregation) → StrategyLearning (pattern mining)
+PaperTrade + StockAnalysis + TradeDecision (from DB)
+    → LearningSummaryService.generateDailySummary() → DailySummary (DB)
+    → LearningSummaryService.minePatterns() → StrategyLearning (DB)
 ```
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `service/LearningSummaryService.java` | Daily summary generation + pattern mining |
+| `controller/LearnerController.java` | REST API for summaries and learnings |
+| `db/PaperTradeRepository.java` | Trade queries |
+| `db/DailySummaryRepository.java` | Summary persistence |
+| `db/StrategyLearningRepository.java` | Learning persistence |
+| `db/StockAnalysisRepository.java` | Signal queries for cross-referencing |
+| `db/TradeDecisionRepository.java` | Decision queries for accuracy |
 
 ## Key Config (LearnerSettings)
 

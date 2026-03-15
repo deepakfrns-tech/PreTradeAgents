@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.pretrade.executor.config.ExecutorSettings;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.pretrade.executor", "com.pretrade.utils"})
 @EnableAsync
 @EnableScheduling
 @EnableConfigurationProperties(ExecutorSettings.class)

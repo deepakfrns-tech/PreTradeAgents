@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Dashboard - PreTrade</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">PreTrade Dashboard</div>
+        <div class="nav-links">
+            <a href="/" class="active">Dashboard</a>
+            <a href="/upload">Upload CSV</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-row">
+            <h1>Trade Signals</h1>
+            <form class="date-picker" method="get" action="/dashboard">
+                <label for="date">Trade Date:</label>
+                <input type="date" id="date" name="date" th:value="${tradeDate}" onchange="this.form.submit()">
+            </form>
+        </div>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <div th:if="${#lists.isEmpty(signals)}" class="empty-state">
+            <h2>No signals for this date</h2>
+            <p>Upload a CSV file from the Market Analyst agent to view trade signals.</p>
+            <a href="/upload" class="btn btn-primary">Upload CSV</a>
+        </div>
+
+        <form th:if="${!#lists.isEmpty(signals)}" method="post" action="/approve-trades">
+            <input type="hidden" name="tradeDate" th:value="${tradeDate}">
+
+            <div class="summary-bar">
+                <div class="summary-item">
+                    <span class="summary-label">Total Signals</span>
+                    <span class="summary-value" th:text="${#lists.size(signals)}">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Approved</span>
+                    <span class="summary-value approved" th:text="${#lists.size(approvedSignalIds)}">0</span>
+                </div>
+                <div class="summary-item">
+                    <button type="submit" class="btn btn-primary">Approve Selected Trades</button>
+                </div>
+            </div>
+
+            <div class="signals-table-wrapper">
+                <table class="signals-table">
+                    <thead>
+                        <tr>
+                            <th class="col-select">Select</th>
+                            <th class="col-symbol">Symbol</th>
+                            <th class="col-score">Score</th>
+                            <th class="col-direction">Direction</th>
+                            <th class="col-action">Action</th>
+                            <th class="col-confidence">Confidence</th>
+                            <th class="col-gap">Gap%</th>
+                            <th class="col-sentiment">Sentiment</th>
+                            <th class="col-volume">Volume</th>
+                            <th class="col-oi">OI Score</th>
+                            <th class="col-entry">Entry</th>
+                            <th class="col-sl">SL</th>
+                            <th class="col-target">Target</th>
+                            <th class="col-rr">R:R</th>
+                            <th class="col-premium">Premium</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="signal : ${signals}"
+                            th:classappend="${#lists.contains(approvedSignalIds, signal.id)} ? 'row-approved' : ''">
+                            <td>
+                                <input type="checkbox" name="signalIds" th:value="${signal.id}"
+                                       th:checked="${#lists.contains(approvedSignalIds, signal.id)}"
+                                       th:disabled="${#lists.contains(approvedSignalIds, signal.id)}">
+                            </td>
+                            <td class="symbol-cell">
+                                <strong th:text="${signal.symbol}">NIFTY</strong>
+                            </td>
+                            <td>
+                                <span class="score-badge"
+                                      th:classappend="${signal.compositeScore != null and signal.compositeScore >= 80} ? 'score-high' : (${signal.compositeScore != null and signal.compositeScore >= 60} ? 'score-medium' : 'score-low')"
+                                      th:text="${signal.compositeScore != null} ? ${#numbers.formatDecimal(signal.compositeScore, 1, 1)} : '-'">75.0</span>
+                            </td>
+                            <td>
+                                <span class="direction-badge"
+                                      th:classappend="${signal.signalDirection}"
+                                      th:text="${signal.signalDirection}">BULLISH</span>
+                            </td>
+                            <td th:text="${signal.recommendedAction}">BUY CE</td>
+                            <td>
+                                <span class="confidence-badge"
+                                      th:classappend="${signal.confidenceLevel}"
+                                      th:text="${signal.confidenceLevel}">HIGH</span>
+                            </td>
+                            <td th:text="${signal.gapPercent != null} ? ${#numbers.formatDecimal(signal.gapPercent, 1, 2)} + '%' : '-'">1.5%</td>
+                            <td th:text="${signal.sentimentScore != null} ? ${#numbers.formatDecimal(signal.sentimentScore, 1, 1)} : '-'">7.5</td>
+                            <td th:text="${signal.volumeRatio != null} ? ${#numbers.formatDecimal(signal.volumeRatio, 1, 2)} + 'x' : '-'">1.5x</td>
+                            <td th:text="${signal.oiScore != null} ? ${#numbers.formatDecimal(signal.oiScore, 1, 1)} : '-'">8.0</td>
+                            <td th:text="${signal.entryStrike != null} ? ${#numbers.formatDecimal(signal.entryStrike, 1, 0)} : '-'">22500</td>
+                            <td th:text="${signal.stopLoss != null} ? ${#numbers.formatDecimal(signal.stopLoss, 1, 0)} : '-'">22400</td>
+                            <td th:text="${signal.target != null} ? ${#numbers.formatDecimal(signal.target, 1, 0)} : '-'">22700</td>
+                            <td th:text="${signal.riskRewardRatio != null} ? ${#numbers.formatDecimal(signal.riskRewardRatio, 1, 2)} : '-'">2.0</td>
+                            <td th:text="${signal.estimatedPremium != null} ? '₹' + ${#numbers.formatDecimal(signal.estimatedPremium, 1, 0)} : '-'">₹150</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Signal Details (expandable) -->
+            <div class="signal-details-section">
+                <h2>Signal Details</h2>
+                <div th:each="signal : ${signals}" class="signal-detail-card"
+                     th:classappend="${#lists.contains(approvedSignalIds, signal.id)} ? 'card-approved' : ''">
+                    <div class="card-header">
+                        <h3>
+                            <span th:text="${signal.symbol}">NIFTY</span>
+                            <span class="score-badge"
+                                  th:classappend="${signal.compositeScore != null and signal.compositeScore >= 80} ? 'score-high' : (${signal.compositeScore != null and signal.compositeScore >= 60} ? 'score-medium' : 'score-low')"
+                                  th:text="${signal.compositeScore != null} ? ${#numbers.formatDecimal(signal.compositeScore, 1, 1)} : '-'">75.0</span>
+                            <span th:if="${#lists.contains(approvedSignalIds, signal.id)}" class="approved-tag">APPROVED</span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-grid">
+                            <div class="detail-section">
+                                <h4>Gap Analysis</h4>
+                                <p><strong>Gap:</strong> <span th:text="${signal.gapPercent != null} ? ${#numbers.formatDecimal(signal.gapPercent, 1, 2)} + '%' : 'N/A'"></span> (<span th:text="${signal.gapDirection}"></span>)</p>
+                                <p><strong>Category:</strong> <span th:text="${signal.gapCategory}"></span></p>
+                                <p><strong>ATR Ratio:</strong> <span th:text="${signal.atrRatio != null} ? ${#numbers.formatDecimal(signal.atrRatio, 1, 2)} : 'N/A'"></span></p>
+                            </div>
+                            <div class="detail-section">
+                                <h4>Options Flow</h4>
+                                <p><strong>PCR:</strong> <span th:text="${signal.pcr != null} ? ${#numbers.formatDecimal(signal.pcr, 1, 2)} : 'N/A'"></span></p>
+                                <p><strong>OI Buildup:</strong> <span th:text="${signal.oiBuildup}"></span></p>
+                                <p><strong>Max Pain:</strong> <span th:text="${signal.maxPain != null} ? ${#numbers.formatDecimal(signal.maxPain, 1, 0)} : 'N/A'"></span></p>
+                                <p><strong>IV Percentile:</strong> <span th:text="${signal.ivPercentile != null} ? ${#numbers.formatDecimal(signal.ivPercentile, 1, 1)} + '%' : 'N/A'"></span></p>
+                            </div>
+                            <div class="detail-section">
+                                <h4>Sentiment</h4>
+                                <p><strong>Score:</strong> <span th:text="${signal.sentimentScore != null} ? ${#numbers.formatDecimal(signal.sentimentScore, 1, 1)} : 'N/A'"></span> (<span th:text="${signal.sentimentLevel}"></span>)</p>
+                                <p th:if="${signal.sentimentReasoning}" class="reasoning" th:text="${signal.sentimentReasoning}"></p>
+                            </div>
+                            <div class="detail-section">
+                                <h4>Trade Setup</h4>
+                                <p><strong>Entry:</strong> <span th:text="${signal.entryStrike}"></span></p>
+                                <p><strong>Stop Loss:</strong> <span th:text="${signal.stopLoss}"></span></p>
+                                <p><strong>Target:</strong> <span th:text="${signal.target}"></span></p>
+                                <p><strong>Risk:Reward:</strong> <span th:text="${signal.riskRewardRatio != null} ? ${#numbers.formatDecimal(signal.riskRewardRatio, 1, 2)} : 'N/A'"></span></p>
+                            </div>
+                        </div>
+                        <div th:if="${signal.claudeReasoning}" class="claude-reasoning">
+                            <h4>Claude's Reasoning</h4>
+                            <p th:text="${signal.claudeReasoning}"></p>
+                        </div>
+                        <div th:if="${signal.riskWarnings}" class="risk-warnings">
+                            <h4>Risk Warnings</h4>
+                            <p th:text="${signal.riskWarnings}"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 import com.pretrade.analyst.config.AnalystSettings;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.pretrade.analyst", "com.pretrade.utils"})
 @EnableAsync
 @EnableConfigurationProperties(AnalystSettings.class)
 @EntityScan(basePackages = "com.pretrade.shared.models")

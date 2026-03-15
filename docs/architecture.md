@@ -2,7 +2,7 @@
 
 ## System Overview
 
-PreTradeAgents is a multi-agent trading analysis system built on a microservices architecture. Three independent Spring Boot agents collaborate through a shared PostgreSQL database to perform pre-market analysis, paper trade execution, and strategy learning.
+PreTradeAgents is a multi-agent trading analysis system built on a microservices architecture. Three independent Spring Boot agents plus a web dashboard collaborate through a shared PostgreSQL database to perform pre-market analysis, trade approval, paper trade execution, and strategy learning. Each component can run independently.
 
 ## High-Level Architecture
 
@@ -31,8 +31,14 @@ PreTradeAgents is a multi-agent trading analysis system built on a microservices
                     │              └──────┬───────┘            │
                     │                     ▼                     │
                     │           Scored StockAnalysis            │
+                    │              + CSV Export                 │
                     └─────────────────┬────────────────────────┘
-                                      │ writes
+                                      │ writes to DB + CSV
+                    ┌─────────────────▼────────────────────────┐
+                    │      Trade Dashboard (Port 8080)          │
+                    │  Upload CSV → View Signals → Approve      │
+                    └─────────────────┬────────────────────────┘
+                                      │ writes TradeDecisions
                     ┌─────────────────▼────────────────────────┐
                     │              PostgreSQL                   │
                     │                                          │
@@ -75,11 +81,11 @@ PreTradeAgents is a multi-agent trading analysis system built on a microservices
            │                          │
            │    ┌─────────────────────┤
            │    │                     │
-     ┌─────▼────▼───┐  ┌─────────────▼──┐  ┌──────────────────┐
-     │agent-market-  │  │agent-trade-    │  │agent-learning-   │
-     │analyst        │  │executor        │  │summary           │
-     │(8081)         │  │(8082)          │  │(8083)            │
-     └───────────────┘  └────────────────┘  └──────────────────┘
+     ┌─────▼────▼───┐  ┌──────────────┐  ┌─────────────▼──┐  ┌──────────────────┐
+     │agent-market-  │  │trade-        │  │agent-trade-    │  │agent-learning-   │
+     │analyst        │  │dashboard     │  │executor        │  │summary           │
+     │(8081)         │  │(8080)        │  │(8082)          │  │(8083)            │
+     └───────────────┘  └──────────────┘  └────────────────┘  └──────────────────┘
 ```
 
 ### Package Structure
@@ -101,16 +107,30 @@ com.pretrade
 ├── analyst                # Agent 1 (agent-market-analyst)
 │   ├── MarketAnalystApplication
 │   ├── config.AnalystSettings
-│   └── collectors
-│       ├── NseCollector
-│       ├── TechnicalCollector
-│       └── NewsCollector
+│   ├── collectors
+│   │   ├── NseCollector
+│   │   ├── TechnicalCollector
+│   │   └── NewsCollector
+│   ├── service.CsvExportService
+│   ├── controller.AnalystController
+│   └── db.StockAnalysisRepository
+├── dashboard              # Trade Dashboard (trade-dashboard)
+│   ├── TradeDashboardApplication
+│   ├── controller.DashboardController
+│   ├── service.CsvParserService
+│   └── db.{StockAnalysisRepository, TradeDecisionRepository}
 ├── executor               # Agent 2 (agent-trade-executor)
 │   ├── TradeExecutorApplication
-│   └── config.ExecutorSettings
+│   ├── config.ExecutorSettings
+│   ├── service.TradeExecutionService
+│   ├── controller.ExecutorController
+│   └── db.{TradeDecisionRepository, PaperTradeRepository}
 └── learner                # Agent 3 (agent-learning-summary)
     ├── LearningSummaryApplication
-    └── config.LearnerSettings
+    ├── config.LearnerSettings
+    ├── service.LearningSummaryService
+    ├── controller.LearnerController
+    └── db.{PaperTradeRepository, DailySummaryRepository, StrategyLearningRepository, ...}
 ```
 
 ## Data Flow
@@ -144,12 +164,26 @@ NSE Option Chain ──> NseCollector.collectOptionChain(symbol)
                     - signalDirection (BULLISH/BEARISH)
                     - entry parameters (strike, SL, target)
                     - claudeReasoning (AI explanation)
+                           │
+                    CsvExportService ──> trade-signals-YYYY-MM-DD.csv
+```
+
+### 1.5. Dashboard Phase (before 9:15 AM IST)
+
+```
+CSV File (from Market Analyst) ──> Upload to Dashboard (port 8080)
+                                         │
+                                    CsvParserService ──> StockAnalysis (saved to DB)
+                                         │
+                                    Dashboard View (scores, direction, reasoning)
+                                         │
+                                    User selects trades ──> TradeDecision (DB, decision=APPROVED)
 ```
 
 ### 2. Market Hours Phase (9:15 AM - 3:30 PM IST)
 
 ```
-StockAnalysis (from DB) ──> TradeDecision (approval/rejection)
+TradeDecision (APPROVED, from DB) ──> @Scheduled 9:15 AM IST trigger
                                     │
                                     ▼
                             PaperTrade (created on entry)

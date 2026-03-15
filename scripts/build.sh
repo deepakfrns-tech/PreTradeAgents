@@ -2,48 +2,68 @@
 set -euo pipefail
 
 # Build all modules in correct dependency order
-# Usage: ./scripts/build.sh [--skip-tests]
+# Usage: ./scripts/build.sh [--skip-tests] [module-name]
+# Examples:
+#   ./scripts/build.sh                    # Build everything
+#   ./scripts/build.sh --skip-tests       # Build everything, skip tests
+#   ./scripts/build.sh trade-dashboard    # Build only trade-dashboard (+ deps)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 SKIP_TESTS=""
+TARGET_MODULE=""
 
-if [[ "${1:-}" == "--skip-tests" ]]; then
-    SKIP_TESTS="-DskipTests"
-fi
+for arg in "$@"; do
+    case "$arg" in
+        --skip-tests) SKIP_TESTS="-DskipTests" ;;
+        *) TARGET_MODULE="$arg" ;;
+    esac
+done
+
+build_module() {
+    local name="$1"
+    local dir="$2"
+    local cmd="${3:-package}"
+    echo "  Building $name..."
+    cd "$ROOT_DIR/$dir"
+    mvn clean $cmd $SKIP_TESTS -q
+    echo "      Done."
+}
 
 echo "=== Building PreTradeAgents ==="
 echo ""
 
-echo "[1/5] Building shared-db..."
-cd "$ROOT_DIR/shared-db"
-mvn clean install $SKIP_TESTS -q
-echo "      Done."
+# Always build shared libs first
+build_module "shared-db" "shared-db" "install"
+build_module "shared-utils" "shared-utils" "install"
 
-echo "[2/5] Building shared-utils..."
-cd "$ROOT_DIR/shared-utils"
-mvn clean install $SKIP_TESTS -q
-echo "      Done."
+if [[ -z "$TARGET_MODULE" ]] || [[ "$TARGET_MODULE" == "agent-market-analyst" ]]; then
+    build_module "agent-market-analyst" "agent-market-analyst"
+fi
 
-echo "[3/5] Building agent-market-analyst..."
-cd "$ROOT_DIR/agent-market-analyst"
-mvn clean package $SKIP_TESTS -q
-echo "      Done."
+if [[ -z "$TARGET_MODULE" ]] || [[ "$TARGET_MODULE" == "trade-dashboard" ]]; then
+    build_module "trade-dashboard" "trade-dashboard"
+fi
 
-echo "[4/5] Building agent-trade-executor..."
-cd "$ROOT_DIR/agent-trade-executor"
-mvn clean package $SKIP_TESTS -q
-echo "      Done."
+if [[ -z "$TARGET_MODULE" ]] || [[ "$TARGET_MODULE" == "agent-trade-executor" ]]; then
+    build_module "agent-trade-executor" "agent-trade-executor"
+fi
 
-echo "[5/5] Building agent-learning-summary..."
-cd "$ROOT_DIR/agent-learning-summary"
-mvn clean package $SKIP_TESTS -q
-echo "      Done."
+if [[ -z "$TARGET_MODULE" ]] || [[ "$TARGET_MODULE" == "agent-learning-summary" ]]; then
+    build_module "agent-learning-summary" "agent-learning-summary"
+fi
 
 echo ""
 echo "=== Build complete ==="
 echo ""
 echo "JARs:"
-echo "  agent-market-analyst/target/agent-market-analyst-1.0.0-SNAPSHOT.jar"
-echo "  agent-trade-executor/target/agent-trade-executor-1.0.0-SNAPSHOT.jar"
-echo "  agent-learning-summary/target/agent-learning-summary-1.0.0-SNAPSHOT.jar"
+echo "  agent-market-analyst/target/agent-market-analyst-1.0.0-SNAPSHOT.jar     (port 8081)"
+echo "  trade-dashboard/target/trade-dashboard-1.0.0-SNAPSHOT.jar               (port 8080)"
+echo "  agent-trade-executor/target/agent-trade-executor-1.0.0-SNAPSHOT.jar     (port 8082)"
+echo "  agent-learning-summary/target/agent-learning-summary-1.0.0-SNAPSHOT.jar (port 8083)"
+echo ""
+echo "Run individually:"
+echo "  java -jar agent-market-analyst/target/agent-market-analyst-1.0.0-SNAPSHOT.jar"
+echo "  java -jar trade-dashboard/target/trade-dashboard-1.0.0-SNAPSHOT.jar"
+echo "  java -jar agent-trade-executor/target/agent-trade-executor-1.0.0-SNAPSHOT.jar"
+echo "  java -jar agent-learning-summary/target/agent-learning-summary-1.0.0-SNAPSHOT.jar"
