@@ -1,0 +1,42 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: agent-trade-executor
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pretrade}
+    username: ${DB_USERNAME:pretrade}
+    password: ${DB_PASSWORD:pretrade}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY}
+  model: claude-sonnet-4-6
+  max-tokens: 4096
+  base-url: https://api.anthropic.com/v1
+
+executor:
+  max-positions: 5
+  max-loss-per-trade: 2000
+  max-daily-loss: 10000
+  monitor-interval-ms: 5000
+  eod-exit-time: "15:15"
+  trailing-stop-percent: 30.0
+
+logging:
+  level:
+    com.pretrade.executor: INFO
+    org.hibernate.SQL: WARN
