@@ -70,6 +70,30 @@ When making changes, add an entry under the current date with:
 
 ---
 
+### Commit: Add Python + Flask reimplementation of all agents
+
+**Files added:**
+- `py/requirements.txt` — Python dependencies (Flask, SQLAlchemy, APScheduler, etc.)
+- `py/shared/{__init__,database,models,time_utils,formatters,lot_sizes}.py` — Shared utilities matching Java/DB schema
+- `py/market_analyst/{__init__,app,csv_export}.py` — Market Analyst with CSV export
+- `py/trade_dashboard/{__init__,app,csv_parser}.py` — Dashboard Flask app
+- `py/trade_dashboard/templates/{base,dashboard,upload}.html` — Jinja2 templates
+- `py/trade_dashboard/static/css/dashboard.css` — Dark-themed dashboard styling
+- `py/trade_executor/{__init__,app}.py` — Trade Executor with 9:15 AM scheduler
+- `py/learning_summary/{__init__,app}.py` — Learning Summary with pattern mining
+- `py/run.sh` — Independent runner script for each agent
+
+**Functional impact:**
+- Full Python alternative to Java agents — same DB schema, same functionality
+- Each agent runs independently as a standalone Flask app
+- All imports verified, Flask apps start and serve correctly
+- CSV export/import round-trip tested
+- APScheduler triggers at 9:15 AM IST on weekdays
+
+**Breaking changes:** None — Python version is additive, Java code unchanged
+
+---
+
 ### Commit: Add local deployment, mandatory doc-update rules, and build scripts
 
 **Files added:**

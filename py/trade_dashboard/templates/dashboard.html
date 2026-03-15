@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Trade Signals - PreTrade{% endblock %}
+{% block content %}
+<div class="header-row">
+    <h1>Trade Signals</h1>
+    <form class="date-picker" method="get" action="{{ url_for('dashboard') }}">
+        <label for="date">Trade Date:</label>
+        <input type="date" id="date" name="date" value="{{ trade_date }}" onchange="this.form.submit()">
+    </form>
+</div>
+
+{% if not signals %}
+<div class="empty-state">
+    <h2>No signals for this date</h2>
+    <p>Upload a CSV file from the Market Analyst agent to view trade signals.</p>
+    <a href="{{ url_for('upload_page') }}" class="btn btn-primary">Upload CSV</a>
+</div>
+{% else %}
+<form method="post" action="{{ url_for('approve_trades') }}">
+    <input type="hidden" name="trade_date" value="{{ trade_date }}">
+
+    <div class="summary-bar">
+        <div class="summary-item">
+            <span class="summary-label">Total Signals</span>
+            <span class="summary-value">{{ signals|length }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Approved</span>
+            <span class="summary-value approved">{{ approved_ids|length }}</span>
+        </div>
+        <div class="summary-item">
+            <button type="submit" class="btn btn-primary">Approve Selected Trades</button>
+        </div>
+    </div>
+
+    <div class="signals-table-wrapper">
+        <table class="signals-table">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>Symbol</th>
+                    <th>Score</th>
+                    <th>Direction</th>
+                    <th>Action</th>
+                    <th>Confidence</th>
+                    <th>Gap%</th>
+                    <th>Sentiment</th>
+                    <th>Volume</th>
+                    <th>OI Score</th>
+                    <th>Entry</th>
+                    <th>SL</th>
+                    <th>Target</th>
+                    <th>R:R</th>
+                    <th>Premium</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in signals %}
+                <tr class="{{ 'row-approved' if s.id in approved_ids else '' }}">
+                    <td>
+                        <input type="checkbox" name="signal_ids" value="{{ s.id }}"
+                               {{ 'checked disabled' if s.id in approved_ids else '' }}>
+                    </td>
+                    <td class="symbol-cell"><strong>{{ s.symbol }}</strong></td>
+                    <td>
+                        {% set score = s.composite_score or 0 %}
+                        <span class="score-badge {{ 'score-high' if score >= 80 else ('score-medium' if score >= 60 else 'score-low') }}">
+                            {{ '%.1f'|format(score) if s.composite_score else '-' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="direction-badge {{ s.signal_direction or '' }}">{{ s.signal_direction or '-' }}</span>
+                    </td>
+                    <td>{{ s.recommended_action or '-' }}</td>
+                    <td>
+                        <span class="confidence-badge {{ s.confidence_level or '' }}">{{ s.confidence_level or '-' }}</span>
+                    </td>
+                    <td>{{ '%.2f%%'|format(s.gap_percent) if s.gap_percent else '-' }}</td>
+                    <td>{{ '%.1f'|format(s.sentiment_score) if s.sentiment_score else '-' }}</td>
+                    <td>{{ '%.2fx'|format(s.volume_ratio) if s.volume_ratio else '-' }}</td>
+                    <td>{{ '%.1f'|format(s.oi_score) if s.oi_score else '-' }}</td>
+                    <td>{{ '%.0f'|format(s.entry_strike) if s.entry_strike else '-' }}</td>
+                    <td>{{ '%.0f'|format(s.stop_loss) if s.stop_loss else '-' }}</td>
+                    <td>{{ '%.0f'|format(s.target) if s.target else '-' }}</td>
+                    <td>{{ '%.2f'|format(s.risk_reward_ratio) if s.risk_reward_ratio else '-' }}</td>
+                    <td>{{ '₹%.0f'|format(s.estimated_premium) if s.estimated_premium else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Signal Detail Cards -->
+    <div class="signal-details-section">
+        <h2>Signal Details</h2>
+        {% for s in signals %}
+        <div class="signal-detail-card {{ 'card-approved' if s.id in approved_ids else '' }}">
+            <div class="card-header">
+                <h3>
+                    {{ s.symbol }}
+                    {% set score = s.composite_score or 0 %}
+                    <span class="score-badge {{ 'score-high' if score >= 80 else ('score-medium' if score >= 60 else 'score-low') }}">
+                        {{ '%.1f'|format(score) if s.composite_score else '-' }}
+                    </span>
+                    {% if s.id in approved_ids %}<span class="approved-tag">APPROVED</span>{% endif %}
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="detail-grid">
+                    <div class="detail-section">
+                        <h4>Gap Analysis</h4>
+                        <p><strong>Gap:</strong> {{ '%.2f%%'|format(s.gap_percent) if s.gap_percent else 'N/A' }} ({{ s.gap_direction or 'N/A' }})</p>
+                        <p><strong>Category:</strong> {{ s.gap_category or 'N/A' }}</p>
+                        <p><strong>ATR Ratio:</strong> {{ '%.2f'|format(s.atr_ratio) if s.atr_ratio else 'N/A' }}</p>
+                    </div>
+                    <div class="detail-section">
+                        <h4>Options Flow</h4>
+                        <p><strong>PCR:</strong> {{ '%.2f'|format(s.pcr) if s.pcr else 'N/A' }}</p>
+                        <p><strong>OI Buildup:</strong> {{ s.oi_buildup or 'N/A' }}</p>
+                        <p><strong>Max Pain:</strong> {{ '%.0f'|format(s.max_pain) if s.max_pain else 'N/A' }}</p>
+                        <p><strong>IV Percentile:</strong> {{ '%.1f%%'|format(s.iv_percentile) if s.iv_percentile else 'N/A' }}</p>
+                    </div>
+                    <div class="detail-section">
+                        <h4>Sentiment</h4>
+                        <p><strong>Score:</strong> {{ '%.1f'|format(s.sentiment_score) if s.sentiment_score else 'N/A' }} ({{ s.sentiment_level or 'N/A' }})</p>
+                        {% if s.sentiment_reasoning %}<p class="reasoning">{{ s.sentiment_reasoning }}</p>{% endif %}
+                    </div>
+                    <div class="detail-section">
+                        <h4>Trade Setup</h4>
+                        <p><strong>Entry:</strong> {{ s.entry_strike or 'N/A' }}</p>
+                        <p><strong>Stop Loss:</strong> {{ s.stop_loss or 'N/A' }}</p>
+                        <p><strong>Target:</strong> {{ s.target or 'N/A' }}</p>
+                        <p><strong>Risk:Reward:</strong> {{ '%.2f'|format(s.risk_reward_ratio) if s.risk_reward_ratio else 'N/A' }}</p>
+                    </div>
+                </div>
+                {% if s.claude_reasoning %}
+                <div class="claude-reasoning">
+                    <h4>Claude's Reasoning</h4>
+                    <p>{{ s.claude_reasoning }}</p>
+                </div>
+                {% endif %}
+                {% if s.risk_warnings %}
+                <div class="risk-warnings">
+                    <h4>Risk Warnings</h4>
+                    <p>{{ s.risk_warnings }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</form>
+{% endif %}
+{% endblock %}
