@@ -1,9 +1,9 @@
 server:
-  port: 8081
+  port: 8080
 
 spring:
   application:
-    name: agent-market-analyst
+    name: trade-dashboard
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pretrade}
     username: ${DB_USERNAME:pretrade}
@@ -21,27 +21,14 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-
-anthropic:
-  api-key: ${ANTHROPIC_API_KEY}
-  model: claude-sonnet-4-6
-  max-tokens: 4096
-  base-url: https://api.anthropic.com/v1
-
-analyst:
-  gap-threshold: 0.5
-  min-composite-score: 60.0
-  weights:
-    gap: 25
-    sentiment: 20
-    volume: 20
-    oi: 20
-    alignment: 15
-  top-n-stocks: 20
-  data-source-timeout-seconds: 30
-  csv-output-dir: ${CSV_OUTPUT_DIR:./output}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  thymeleaf:
+    cache: false
 
 logging:
   level:
-    com.pretrade.analyst: INFO
+    com.pretrade.dashboard: INFO
     org.hibernate.SQL: WARN

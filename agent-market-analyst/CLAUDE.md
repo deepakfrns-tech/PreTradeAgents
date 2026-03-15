@@ -8,7 +8,8 @@ Agent 1. Runs during pre-market (9:00-9:15 AM IST). Collects NSE pre-market data
 ```
 NseCollector ──┐
 NewsCollector ──┼──> Claude AI Analysis ──> StockAnalysis (DB)
-TechnicalCollector─┘
+TechnicalCollector─┘                              ↓
+                                         CsvExportService ──> trade-signals-YYYY-MM-DD.csv
 ```
 
 ## Key Files
@@ -19,6 +20,9 @@ TechnicalCollector─┘
 | `collectors/NewsCollector.java` | Google News RSS + MoneyControl scraping. DTO: NewsItem | MEDIUM — external site changes break parsing |
 | `collectors/TechnicalCollector.java` | Volume/VWAP calculations (stub for broker API) | LOW — mostly static calculations |
 | `config/AnalystSettings.java` | Scoring weights, thresholds, timeout config | LOW |
+| `service/CsvExportService.java` | Exports StockAnalysis to CSV file | LOW |
+| `controller/AnalystController.java` | REST API for signals and CSV export | LOW |
+| `db/StockAnalysisRepository.java` | JPA repository for signal queries | LOW |
 
 ## Scoring Weights (default)
 

@@ -14,6 +14,62 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-15
 
+### Commit: Add CSV export, trade dashboard, execution scheduling, and learning services
+
+**Files added:**
+- `trade-dashboard/pom.xml` - New Spring Boot web module (port 8080)
+- `trade-dashboard/src/main/java/com/pretrade/dashboard/TradeDashboardApplication.java` - Dashboard entry point
+- `trade-dashboard/src/main/java/com/pretrade/dashboard/controller/DashboardController.java` - Upload, dashboard, trade approval
+- `trade-dashboard/src/main/java/com/pretrade/dashboard/service/CsvParserService.java` - CSV parsing with quoted field support
+- `trade-dashboard/src/main/java/com/pretrade/dashboard/db/StockAnalysisRepository.java` - Signal queries
+- `trade-dashboard/src/main/java/com/pretrade/dashboard/db/TradeDecisionRepository.java` - Decision persistence
+- `trade-dashboard/src/main/resources/templates/dashboard.html` - Signal dashboard with scoring, details, approval
+- `trade-dashboard/src/main/resources/templates/upload.html` - CSV upload with drag-and-drop
+- `trade-dashboard/src/main/resources/static/css/dashboard.css` - Dark theme styling
+- `trade-dashboard/src/main/resources/application.yml` - Dashboard configuration
+- `trade-dashboard/src/test/java/com/pretrade/dashboard/TradeDashboardApplicationTest.java`
+- `trade-dashboard/src/test/java/com/pretrade/dashboard/CsvParserServiceTest.java` - CSV parsing tests
+- `agent-market-analyst/src/main/java/com/pretrade/analyst/service/CsvExportService.java` - CSV generation
+- `agent-market-analyst/src/main/java/com/pretrade/analyst/controller/AnalystController.java` - REST API
+- `agent-market-analyst/src/main/java/com/pretrade/analyst/db/StockAnalysisRepository.java` - JPA repo
+- `agent-trade-executor/src/main/java/com/pretrade/executor/service/TradeExecutionService.java` - 9:15 trigger + monitoring
+- `agent-trade-executor/src/main/java/com/pretrade/executor/controller/ExecutorController.java` - REST API
+- `agent-trade-executor/src/main/java/com/pretrade/executor/db/TradeDecisionRepository.java` - JPA repo
+- `agent-trade-executor/src/main/java/com/pretrade/executor/db/PaperTradeRepository.java` - JPA repo
+- `agent-learning-summary/src/main/java/com/pretrade/learner/service/LearningSummaryService.java` - Summary + patterns
+- `agent-learning-summary/src/main/java/com/pretrade/learner/controller/LearnerController.java` - REST API
+- `agent-learning-summary/src/main/java/com/pretrade/learner/db/PaperTradeRepository.java` - JPA repo
+- `agent-learning-summary/src/main/java/com/pretrade/learner/db/DailySummaryRepository.java` - JPA repo
+- `agent-learning-summary/src/main/java/com/pretrade/learner/db/StrategyLearningRepository.java` - JPA repo
+- `agent-learning-summary/src/main/java/com/pretrade/learner/db/StockAnalysisRepository.java` - JPA repo
+- `agent-learning-summary/src/main/java/com/pretrade/learner/db/TradeDecisionRepository.java` - JPA repo
+- `scripts/run.sh` - Independent agent runner script
+
+**Files modified:**
+- `agent-market-analyst/src/main/java/com/pretrade/analyst/MarketAnalystApplication.java` - Added utils scan
+- `agent-market-analyst/src/main/resources/application.yml` - Added csv-output-dir config
+- `agent-trade-executor/src/main/java/com/pretrade/executor/TradeExecutorApplication.java` - Added utils scan
+- `agent-learning-summary/src/main/java/com/pretrade/learner/LearningSummaryApplication.java` - Added utils scan
+- `docker-compose.yml` - Added dashboard service, profiles, CSV volume
+- `scripts/build.sh` - Added trade-dashboard, target module support
+- `scripts/test.sh` - Added trade-dashboard to modules list
+- `CHANGELOG.md` - Updated with all changes
+- `COMMIT_LOG.md` - This entry
+
+**Functional impact:**
+- Market Analyst now exports signals to CSV (`trade-signals-YYYY-MM-DD.csv`)
+- New Trade Dashboard web app at port 8080 for uploading CSV and approving trades
+- Trade selections in the dashboard are persisted as TradeDecisions in the database
+- Trade Executor automatically triggers paper trades at 9:15 AM IST for approved decisions
+- Learning Summary generates DailySummary aggregations and mines strategy patterns
+- All agents can run independently via `./scripts/run.sh {postgres|analyst|dashboard|executor|learner}`
+- Docker Compose supports profiles for selective service startup
+
+**Breaking changes:**
+- `docker-compose.yml` now uses profiles — use `docker compose --profile all up` for full stack
+
+---
+
 ### Commit: Add local deployment, mandatory doc-update rules, and build scripts
 
 **Files added:**

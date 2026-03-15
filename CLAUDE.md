@@ -2,23 +2,24 @@
 
 ## Purpose
 
-PreTradeAgents is a multi-agent Claude-powered trading system for NSE (India). Three Spring Boot microservices analyze pre-market data, execute paper trades, and extract strategy learnings — all coordinated through a shared PostgreSQL database.
+PreTradeAgents is a multi-agent Claude-powered trading system for NSE (India). Three Spring Boot agents + a web dashboard analyze pre-market data, execute paper trades, and extract strategy learnings — all coordinated through a shared PostgreSQL database.
 
 ## Repo Map
 
 ```
 PreTradeAgents/
-├── agent-market-analyst/        # Agent 1 (port 8081) - NSE data + Claude scoring
-├── agent-trade-executor/        # Agent 2 (port 8082) - Paper trade execution
-├── agent-learning-summary/      # Agent 3 (port 8083) - Pattern mining + strategy
+├── agent-market-analyst/        # Agent 1 (port 8081) - NSE data + Claude scoring + CSV export
+├── trade-dashboard/             # Web Dashboard (port 8080) - Upload CSV, view signals, approve trades
+├── agent-trade-executor/        # Agent 2 (port 8082) - Paper trade execution at 9:15 AM
+├── agent-learning-summary/      # Agent 3 (port 8083) - Pattern mining + strategy learnings
 ├── shared-db/                   # JPA entities + Flyway migrations (6 tables)
 ├── shared-utils/                # NseClient, TimeUtils, Formatters, LotSizes
 ├── docs/                        # Architecture, ADRs, runbooks (progressive context)
 │   ├── architecture.md
 │   ├── decisions/               # Architecture Decision Records
 │   └── runbooks/                # Operational guides
-├── docker-compose.yml           # Local deployment (all agents + PostgreSQL)
-├── scripts/                     # Build, test, and deployment scripts
+├── docker-compose.yml           # Local deployment with profiles
+├── scripts/                     # Build, test, run, and deployment scripts
 └── .claude/
     ├── settings.json            # Claude Code project settings
     ├── skills/                  # Reusable AI workflows
@@ -61,7 +62,7 @@ Each module has its own `CLAUDE.md` with module-specific context.
 ### Environment Variables
 
 ```
-DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, ANTHROPIC_API_KEY
+DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, ANTHROPIC_API_KEY, CSV_OUTPUT_DIR
 ```
 
 ## Commands
@@ -73,17 +74,23 @@ DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, ANTHROPIC_API_KEY
 # Test everything
 ./scripts/test.sh
 
-# Local deployment (Docker)
-docker compose up -d            # Start all services
-docker compose down             # Stop all services
-docker compose logs -f          # Tail logs
+# Run independently (each in separate terminal)
+./scripts/run.sh postgres       # Start PostgreSQL via Docker
+./scripts/run.sh analyst        # Market Analyst (port 8081)
+./scripts/run.sh dashboard      # Trade Dashboard (port 8080)
+./scripts/run.sh executor       # Trade Executor (port 8082)
+./scripts/run.sh learner        # Learning Summary (port 8083)
+
+# Docker deployment with profiles
+docker compose --profile all up -d           # Start everything
+docker compose --profile dashboard up -d     # Start only dashboard + postgres
+docker compose --profile executor up -d      # Start only executor + postgres
+docker compose down                          # Stop all services
 
 # Build + run without Docker
 cd shared-db && mvn clean install && cd .. && cd shared-utils && mvn clean install && cd ..
-cd agent-market-analyst && mvn clean package && cd ..
-cd agent-trade-executor && mvn clean package && cd ..
-cd agent-learning-summary && mvn clean package && cd ..
-java -jar agent-market-analyst/target/agent-market-analyst-1.0.0-SNAPSHOT.jar
+cd trade-dashboard && mvn clean package && cd ..
+java -jar trade-dashboard/target/trade-dashboard-1.0.0-SNAPSHOT.jar
 
 # Test a single module
 cd <module> && mvn test

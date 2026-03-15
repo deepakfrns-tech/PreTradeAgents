@@ -10,7 +10,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
-MODULES=("shared-db" "shared-utils" "agent-market-analyst" "agent-trade-executor" "agent-learning-summary")
+MODULES=("shared-db" "shared-utils" "agent-market-analyst" "trade-dashboard" "agent-trade-executor" "agent-learning-summary")
 
 # If a specific module is requested
 if [[ -n "${1:-}" ]]; then

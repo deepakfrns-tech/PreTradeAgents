@@ -33,9 +33,35 @@ services:
       DB_USERNAME: pretrade
       DB_PASSWORD: pretrade
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CSV_OUTPUT_DIR: /app/output
+    volumes:
+      - pretrade-csv-output:/app/output
     depends_on:
       postgres:
         condition: service_healthy
+    profiles:
+      - all
+      - analyst
+
+  trade-dashboard:
+    build:
+      context: .
+      dockerfile: trade-dashboard/Dockerfile
+    container_name: pretrade-dashboard
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pretrade
+      DB_USERNAME: pretrade
+      DB_PASSWORD: pretrade
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - all
+      - dashboard
 
   trade-executor:
     build:
@@ -54,6 +80,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    profiles:
+      - all
+      - executor
 
   learning-summary:
     build:
@@ -72,6 +101,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    profiles:
+      - all
+      - learner
 
 volumes:
   pretrade-pgdata:
+  pretrade-csv-output:

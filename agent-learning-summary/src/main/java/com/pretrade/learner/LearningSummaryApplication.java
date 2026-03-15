@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 import com.pretrade.learner.config.LearnerSettings;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.pretrade.learner", "com.pretrade.utils"})
 @EnableAsync
 @EnableConfigurationProperties(LearnerSettings.class)
 @EntityScan(basePackages = "com.pretrade.shared.models")

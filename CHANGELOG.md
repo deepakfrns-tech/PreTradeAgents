@@ -7,6 +7,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Trade Dashboard** web app (`trade-dashboard/`, port 8080) — upload CSV, view signals dashboard, select trades for execution
+  - CSV upload with drag-and-drop support and parsed signal import to DB
+  - Interactive dark-themed dashboard with signal scoring, direction badges, confidence indicators
+  - Trade approval workflow: select signals → persist as TradeDecision in DB
+  - Signal detail cards with Claude reasoning, risk warnings, options flow, gap analysis
+- **CSV Export** for Market Analyst agent — exports StockAnalysis signals to `trade-signals-YYYY-MM-DD.csv`
+  - REST endpoint `POST /api/analyst/export-csv` to generate and download CSV
+  - Configurable output directory via `CSV_OUTPUT_DIR` env var
+- **Trade Execution Service** with 9:15 AM IST scheduled trigger (`@Scheduled(cron)`)
+  - Reads approved TradeDecisions from DB at market open
+  - Creates PaperTrade entries with position limits and risk controls
+  - Position monitoring with trailing stop loss and EOD forced exit
+  - Manual trigger endpoint: `POST /api/executor/trigger`
+- **Learning Summary Service** with daily aggregation and pattern mining
+  - Generates DailySummary from trade results (win rate, PnL, profit factor)
+  - Mines direction bias and timing patterns from lookback period
+  - Produces StrategyLearning records with confidence scoring
+  - REST endpoints for summary generation and pattern mining
+- JPA repositories for all 3 agents and the dashboard
+- REST controllers with health endpoints for all agents
+- `scripts/run.sh` — run individual agents or full stack locally
+- Docker Compose profiles for independent service execution (`analyst`, `dashboard`, `executor`, `learner`)
+
+### Changed
+- `scripts/build.sh` updated for 6 modules (added trade-dashboard), supports target module builds
+- `scripts/test.sh` updated to include trade-dashboard module
+- `docker-compose.yml` restructured with profiles and shared CSV volume
+- Agent applications updated to scan `com.pretrade.utils` package for shared beans
+
+### Previously Added
 - Docker Compose local deployment (`docker-compose.yml`) — one command to run everything
 - Dockerfiles for all 3 agents (multi-stage builds with JRE-alpine runtime)
 - `.dockerignore` to optimize Docker build context
