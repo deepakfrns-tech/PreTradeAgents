@@ -7,7 +7,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- CLAUDE.md for AI assistant guidance and codebase navigation
+- CLAUDE.md rewritten to be concise (purpose, repo map, rules only) per best practices
+- `.claude/settings.json` with permissions (allowed/denied commands)
+- `.claude/skills/` — 4 reusable AI workflow skills:
+  - `code-review/SKILL.md` — code review checklist with project-specific rules
+  - `refactor/SKILL.md` — safe refactoring playbook with pre/post checklists
+  - `debug/SKILL.md` — systematic debugging workflow with common failure patterns
+  - `release/SKILL.md` — release procedure with build verification steps
+- `.claude/hooks/README.md` — guardrail documentation for automated checks
+- `docs/decisions/` — Architecture Decision Records (ADRs):
+  - ADR-001: Multi-agent microservice architecture
+  - ADR-002: Claude AI for analysis and learning
+  - ADR-003: Independent Maven modules (no parent POM)
+- `docs/runbooks/` — Operational guides:
+  - `build-and-deploy.md` — full build, run, and troubleshooting
+  - `database-operations.md` — schema changes, JSONB queries, migration rules
+- Local `CLAUDE.md` files for each critical module:
+  - `shared-db/CLAUDE.md` — migration danger zones, entity-schema mapping
+  - `shared-utils/CLAUDE.md` — utility class rules and common changes
+  - `agent-market-analyst/CLAUDE.md` — collector architecture, scoring weights
+  - `agent-trade-executor/CLAUDE.md` — trade lifecycle, JSONB fields
+  - `agent-learning-summary/CLAUDE.md` — Claude Opus usage, lookback queries
+
+### Changed
+- CLAUDE.md restructured from verbose guide to focused north-star document
+- Previous detailed content moved to docs/architecture.md and local CLAUDE.md files
+
+### Previously Added
 - README.md with project overview, setup instructions, and usage guide
 - docs/architecture.md with system design, data flow diagrams, and module relationships
 - CHANGELOG.md for tracking version history

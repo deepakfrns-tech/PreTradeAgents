@@ -14,6 +14,39 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-15
 
+### Commit: Apply AI-friendly best practices (tweet-inspired restructure)
+
+**Files added:**
+- `CLAUDE.md` - Rewritten: concise north-star (purpose, map, rules only)
+- `.claude/settings.json` - Claude Code project permissions
+- `.claude/skills/code-review/SKILL.md` - Code review expert mode
+- `.claude/skills/refactor/SKILL.md` - Refactoring playbook
+- `.claude/skills/debug/SKILL.md` - Debugging workflow
+- `.claude/skills/release/SKILL.md` - Release procedure
+- `.claude/hooks/README.md` - Guardrail documentation
+- `docs/decisions/001-multi-agent-architecture.md` - ADR
+- `docs/decisions/002-claude-ai-integration.md` - ADR
+- `docs/decisions/003-no-parent-pom.md` - ADR
+- `docs/runbooks/build-and-deploy.md` - Operational guide
+- `docs/runbooks/database-operations.md` - Operational guide
+- `shared-db/CLAUDE.md` - Local context for database module
+- `shared-utils/CLAUDE.md` - Local context for utilities module
+- `agent-market-analyst/CLAUDE.md` - Local context for analyst agent
+- `agent-trade-executor/CLAUDE.md` - Local context for executor agent
+- `agent-learning-summary/CLAUDE.md` - Local context for learner agent
+
+**Functional impact:**
+- No functional code changes. Structure and documentation only.
+- CLAUDE.md reduced from 183 lines to ~65 lines (focused on purpose/map/rules)
+- Detailed module context moved to per-module CLAUDE.md files
+- ADRs document key architecture decisions for future contributors
+- Skills provide consistent AI workflows across sessions
+- Runbooks provide operational procedures for common tasks
+
+**Breaking changes:** None
+
+---
+
 ### Commit: Restructure repo for AI-friendly development
 
 **Files added:**
