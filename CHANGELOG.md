@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `py/LOCAL_SETUP.md` — Comprehensive local execution guide for all Python agents with prerequisites, environment setup, endpoint reference, workflow, and troubleshooting
 - **Trade Dashboard** web app (`trade-dashboard/`, port 8080) — upload CSV, view signals dashboard, select trades for execution
   - CSV upload with drag-and-drop support and parsed signal import to DB
   - Interactive dark-themed dashboard with signal scoring, direction badges, confidence indicators
@@ -29,6 +30,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - REST controllers with health endpoints for all agents
 - `scripts/run.sh` — run individual agents or full stack locally
 - Docker Compose profiles for independent service execution (`analyst`, `dashboard`, `executor`, `learner`)
+
+### Added (Python Implementation)
+- Complete Python + Flask reimplementation of all agents under `py/` directory
+  - `py/shared/` — SQLAlchemy models, database, time_utils, formatters, lot_sizes (matching existing DB schema)
+  - `py/market_analyst/` — CSV export service + Flask REST API (port 8081)
+  - `py/trade_dashboard/` — Flask web app with Jinja2 templates, CSV upload, signal dashboard, trade approval (port 8080)
+  - `py/trade_executor/` — APScheduler 9:15 AM cron trigger + position monitoring + Flask REST API (port 8082)
+  - `py/learning_summary/` — Daily summary aggregation, pattern mining, Flask REST API (port 8083)
+  - `py/requirements.txt` — Flask, SQLAlchemy, psycopg2, APScheduler, requests
+  - `py/run.sh` — Run each agent independently (setup, postgres, analyst, dashboard, executor, learner)
 
 ### Changed
 - `scripts/build.sh` updated for 6 modules (added trade-dashboard), supports target module builds

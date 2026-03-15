@@ -14,6 +14,18 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-15
 
+### Commit: Add local execution guide for Python agents
+
+**Files added:**
+- `py/LOCAL_SETUP.md` - Step-by-step local setup and execution guide for all 4 Python agents
+
+**Functional impact:**
+- Developers now have a single reference document covering prerequisites, DB setup, running each agent, endpoint reference, daily workflow, and troubleshooting
+
+**Breaking changes:** None
+
+---
+
 ### Commit: Add CSV export, trade dashboard, execution scheduling, and learning services
 
 **Files added:**
@@ -67,6 +79,30 @@ When making changes, add an entry under the current date with:
 
 **Breaking changes:**
 - `docker-compose.yml` now uses profiles — use `docker compose --profile all up` for full stack
+
+---
+
+### Commit: Add Python + Flask reimplementation of all agents
+
+**Files added:**
+- `py/requirements.txt` — Python dependencies (Flask, SQLAlchemy, APScheduler, etc.)
+- `py/shared/{__init__,database,models,time_utils,formatters,lot_sizes}.py` — Shared utilities matching Java/DB schema
+- `py/market_analyst/{__init__,app,csv_export}.py` — Market Analyst with CSV export
+- `py/trade_dashboard/{__init__,app,csv_parser}.py` — Dashboard Flask app
+- `py/trade_dashboard/templates/{base,dashboard,upload}.html` — Jinja2 templates
+- `py/trade_dashboard/static/css/dashboard.css` — Dark-themed dashboard styling
+- `py/trade_executor/{__init__,app}.py` — Trade Executor with 9:15 AM scheduler
+- `py/learning_summary/{__init__,app}.py` — Learning Summary with pattern mining
+- `py/run.sh` — Independent runner script for each agent
+
+**Functional impact:**
+- Full Python alternative to Java agents — same DB schema, same functionality
+- Each agent runs independently as a standalone Flask app
+- All imports verified, Flask apps start and serve correctly
+- CSV export/import round-trip tested
+- APScheduler triggers at 9:15 AM IST on weekdays
+
+**Breaking changes:** None — Python version is additive, Java code unchanged
 
 ---
 
