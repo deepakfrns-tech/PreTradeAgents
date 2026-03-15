@@ -14,6 +14,18 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-15
 
+### Commit: Add local execution guide for Python agents
+
+**Files added:**
+- `py/LOCAL_SETUP.md` - Step-by-step local setup and execution guide for all 4 Python agents
+
+**Functional impact:**
+- Developers now have a single reference document covering prerequisites, DB setup, running each agent, endpoint reference, daily workflow, and troubleshooting
+
+**Breaking changes:** None
+
+---
+
 ### Commit: Add CSV export, trade dashboard, execution scheduling, and learning services
 
 **Files added:**

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `py/LOCAL_SETUP.md` — Comprehensive local execution guide for all Python agents with prerequisites, environment setup, endpoint reference, workflow, and troubleshooting
 - **Trade Dashboard** web app (`trade-dashboard/`, port 8080) — upload CSV, view signals dashboard, select trades for execution
   - CSV upload with drag-and-drop support and parsed signal import to DB
   - Interactive dark-themed dashboard with signal scoring, direction badges, confidence indicators
