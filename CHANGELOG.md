@@ -6,9 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Added
-- Postman collection (`postman/PreTradeAgents.postman_collection.json`) covering all 4 agents with 17 requests
-
 ### Fixed
 - Market Analyst agent now returns useful JSON at root URL (`/`) instead of 404, listing all available endpoints
 

@@ -14,19 +14,6 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-16
 
-### Commit: Add Postman collection for all PreTradeAgents APIs
-
-**Files added:**
-- `postman/PreTradeAgents.postman_collection.json` — 17 requests across 4 agent folders with collection-level variables
-
-**Functional impact:**
-- Developers can import the collection into Postman to test all agent endpoints
-- Collection variables (`base_url_analyst`, `trade_date`, etc.) make it easy to switch environments
-
-**Breaking changes:** None
-
----
-
 ### Commit: Add root route to Market Analyst agent to fix 404 on /
 
 **Files modified:**
