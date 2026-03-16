@@ -1,0 +1,353 @@
+{
+	"info": {
+		"name": "PreTradeAgents",
+		"description": "API collection for all PreTradeAgents microservices.\n\nAgents:\n- Market Analyst (port 8081)\n- Trade Dashboard (port 8080)\n- Trade Executor (port 8082)\n- Learning Summary (port 8083)\n\nSet the {{base_url_*}} variables in the environment or use the defaults.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url_analyst",
+			"value": "http://127.0.0.1:8081",
+			"type": "string"
+		},
+		{
+			"key": "base_url_dashboard",
+			"value": "http://127.0.0.1:8080",
+			"type": "string"
+		},
+		{
+			"key": "base_url_executor",
+			"value": "http://127.0.0.1:8082",
+			"type": "string"
+		},
+		{
+			"key": "base_url_learner",
+			"value": "http://127.0.0.1:8083",
+			"type": "string"
+		},
+		{
+			"key": "trade_date",
+			"value": "2026-03-16",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Market Analyst (8081)",
+			"description": "Collects NSE pre-market data, scores signals via Claude, exports CSV.",
+			"item": [
+				{
+					"name": "Root - Agent Info & Endpoints",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_analyst}}/",
+							"host": ["{{base_url_analyst}}"],
+							"path": [""]
+						},
+						"description": "Returns agent status and a listing of all available API endpoints."
+					}
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_analyst}}/api/analyst/health",
+							"host": ["{{base_url_analyst}}"],
+							"path": ["api", "analyst", "health"]
+						},
+						"description": "Returns UP status with current IST timestamp. Use this to verify the agent is running."
+					}
+				},
+				{
+					"name": "Get Signals by Date",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_analyst}}/api/analyst/signals/{{trade_date}}",
+							"host": ["{{base_url_analyst}}"],
+							"path": ["api", "analyst", "signals", "{{trade_date}}"]
+						},
+						"description": "Returns all stock analysis signals for the given trade date, ordered by composite score descending."
+					}
+				},
+				{
+					"name": "Export Signals to CSV",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_analyst}}/api/analyst/export-csv?date={{trade_date}}",
+							"host": ["{{base_url_analyst}}"],
+							"path": ["api", "analyst", "export-csv"],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{trade_date}}",
+									"description": "Trade date in YYYY-MM-DD format. Defaults to today IST."
+								}
+							]
+						},
+						"description": "Exports signals for the given date as a CSV file download. Returns 204 if no signals exist."
+					}
+				}
+			]
+		},
+		{
+			"name": "Trade Dashboard (8080)",
+			"description": "Web dashboard for uploading CSV, viewing signals, and approving trades.",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_dashboard}}/api/dashboard/health",
+							"host": ["{{base_url_dashboard}}"],
+							"path": ["api", "dashboard", "health"]
+						},
+						"description": "Returns UP status with current IST timestamp."
+					}
+				},
+				{
+					"name": "Dashboard Page",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_dashboard}}/dashboard?date={{trade_date}}",
+							"host": ["{{base_url_dashboard}}"],
+							"path": ["dashboard"],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{trade_date}}",
+									"description": "Trade date in YYYY-MM-DD format"
+								}
+							]
+						},
+						"description": "Returns the HTML dashboard page showing signals and trade approvals for the given date."
+					}
+				},
+				{
+					"name": "Upload Page",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_dashboard}}/upload",
+							"host": ["{{base_url_dashboard}}"],
+							"path": ["upload"]
+						},
+						"description": "Returns the HTML upload page for CSV files."
+					}
+				},
+				{
+					"name": "Upload CSV File",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "",
+									"description": "Select the trade-signals CSV file to upload"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url_dashboard}}/upload",
+							"host": ["{{base_url_dashboard}}"],
+							"path": ["upload"]
+						},
+						"description": "Uploads a CSV file containing trade signals. Parses and saves/updates signals in the database. Redirects to dashboard on success."
+					}
+				},
+				{
+					"name": "Approve Trades",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "trade_date",
+									"value": "{{trade_date}}",
+									"description": "Trade date in YYYY-MM-DD format"
+								},
+								{
+									"key": "signal_ids",
+									"value": "1",
+									"description": "Signal ID to approve (repeat this key for multiple signals)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url_dashboard}}/approve-trades",
+							"host": ["{{base_url_dashboard}}"],
+							"path": ["approve-trades"]
+						},
+						"description": "Approves selected signals for trade execution. Creates TradeDecision records with APPROVED status. Pass multiple signal_ids for batch approval."
+					}
+				}
+			]
+		},
+		{
+			"name": "Trade Executor (8082)",
+			"description": "Executes paper trades at 9:15 AM IST. Monitors positions and forces EOD exit at 15:15.",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_executor}}/api/executor/health",
+							"host": ["{{base_url_executor}}"],
+							"path": ["api", "executor", "health"]
+						},
+						"description": "Returns UP status with current IST timestamp."
+					}
+				},
+				{
+					"name": "Manual Trigger - Execute Trades",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_executor}}/api/executor/trigger",
+							"host": ["{{base_url_executor}}"],
+							"path": ["api", "executor", "trigger"]
+						},
+						"description": "Manually triggers trade execution for today's approved decisions. Normally runs automatically at 9:15 AM IST."
+					}
+				},
+				{
+					"name": "Get All Trades by Date",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_executor}}/api/executor/trades/{{trade_date}}",
+							"host": ["{{base_url_executor}}"],
+							"path": ["api", "executor", "trades", "{{trade_date}}"]
+						},
+						"description": "Returns all paper trades (OPEN + CLOSED) for the given date."
+					}
+				},
+				{
+					"name": "Get Open Trades by Date",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_executor}}/api/executor/trades/{{trade_date}}/open",
+							"host": ["{{base_url_executor}}"],
+							"path": ["api", "executor", "trades", "{{trade_date}}", "open"]
+						},
+						"description": "Returns only currently open paper trades for the given date."
+					}
+				}
+			]
+		},
+		{
+			"name": "Learning Summary (8083)",
+			"description": "Generates daily summaries and mines strategy patterns from trade history.",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_learner}}/api/learner/health",
+							"host": ["{{base_url_learner}}"],
+							"path": ["api", "learner", "health"]
+						},
+						"description": "Returns UP status with current IST timestamp."
+					}
+				},
+				{
+					"name": "Generate Daily Summary",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_learner}}/api/learner/generate-summary?date={{trade_date}}",
+							"host": ["{{base_url_learner}}"],
+							"path": ["api", "learner", "generate-summary"],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{trade_date}}",
+									"description": "Trade date in YYYY-MM-DD format. Defaults to today IST."
+								}
+							]
+						},
+						"description": "Aggregates trades into a daily summary (total trades, win rate, PnL, profit factor). Returns 204 if no data."
+					}
+				},
+				{
+					"name": "Mine Strategy Patterns",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_learner}}/api/learner/mine-patterns?date={{trade_date}}",
+							"host": ["{{base_url_learner}}"],
+							"path": ["api", "learner", "mine-patterns"],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{trade_date}}",
+									"description": "Trade date in YYYY-MM-DD format. Mines patterns from the last 30 days."
+								}
+							]
+						},
+						"description": "Mines patterns from recent trade history (direction bias, entry timing). Requires minimum 3 closed trades in the lookback period."
+					}
+				},
+				{
+					"name": "Get Daily Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_learner}}/api/learner/summary/{{trade_date}}",
+							"host": ["{{base_url_learner}}"],
+							"path": ["api", "learner", "summary", "{{trade_date}}"]
+						},
+						"description": "Returns the daily summary for the given date. Returns 204 if no summary exists."
+					}
+				},
+				{
+					"name": "Get Active Strategy Learnings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_learner}}/api/learner/learnings",
+							"host": ["{{base_url_learner}}"],
+							"path": ["api", "learner", "learnings"]
+						},
+						"description": "Returns all active strategy learnings ordered by confidence score descending."
+					}
+				}
+			]
+		}
+	]
+}
