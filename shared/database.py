@@ -8,7 +8,7 @@ DB_NAME = os.environ.get("DB_NAME", "pretrade")
 DB_USER = os.environ.get("DB_USERNAME", "pretrade")
 DB_PASS = os.environ.get("DB_PASSWORD", "pretrade")
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = f"postgresql+pg8000://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(DATABASE_URL, pool_size=5, max_overflow=10)
 SessionLocal = scoped_session(sessionmaker(bind=engine))
