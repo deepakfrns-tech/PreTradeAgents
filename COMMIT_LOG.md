@@ -14,6 +14,18 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-16
 
+### Commit: Add root route to Market Analyst agent to fix 404 on /
+
+**Files modified:**
+- `market_analyst/app.py` — Added `/` route returning agent info and endpoint listing as JSON
+
+**Functional impact:**
+- Hitting `http://127.0.0.1:8081/` now returns a JSON response with agent status and available endpoints instead of a 404 error
+
+**Breaking changes:** None
+
+---
+
 ### Commit: Update all documentation to reference Python/Flask instead of Java/Spring Boot
 
 **Files modified:**

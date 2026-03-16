@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Market Analyst agent now returns useful JSON at root URL (`/`) instead of 404, listing all available endpoints
+
 ### Changed (BREAKING) — Complete Java to Python Refactor
 - **Entire codebase migrated from Java/Spring Boot to Python/Flask**
 - Removed all Java source code, Maven POMs, and Spring Boot configurations
