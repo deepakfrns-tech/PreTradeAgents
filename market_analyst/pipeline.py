@@ -21,6 +21,7 @@ from shared.time_utils import today_ist, now_ist
 from shared.lot_sizes import is_valid_fno_stock, get_lot_size
 from market_analyst.collectors.nse_collector import (
     collect_pre_market_data,
+    collect_live_equity_data,
     collect_option_chain,
     collect_market_snapshot,
 )
@@ -81,12 +82,17 @@ def run_pipeline(trade_date=None, min_gap=None, top_n=None):
 
     logger.info("=== Starting analysis pipeline for %s ===", trade_date)
 
-    # Step 1: Collect pre-market data
+    # Step 1: Collect pre-market data (with live equity fallback)
     logger.info("Step 1: Collecting pre-market data...")
     pre_market = collect_pre_market_data()
+    data_source = "pre-market"
     if not pre_market:
-        logger.warning("No pre-market data returned from NSE. Pipeline aborted.")
-        return {"status": "error", "message": "No pre-market data from NSE. Market may be closed or NSE blocked the request.", "signals": []}
+        logger.info("Pre-market data unavailable, trying live equity data...")
+        pre_market = collect_live_equity_data()
+        data_source = "live-equity"
+    if not pre_market:
+        logger.warning("No data returned from NSE. Pipeline aborted.")
+        return {"status": "error", "message": "No data from NSE. Market may be closed or NSE blocked the request. Try again during market hours (9:00 AM - 3:30 PM IST, Mon-Fri).", "signals": []}
 
     # Step 2: Collect market snapshot
     logger.info("Step 2: Collecting market snapshot...")
@@ -148,7 +154,84 @@ def run_pipeline(trade_date=None, min_gap=None, top_n=None):
     saved = _save_signals(trade_date, gap_stocks, scored)
 
     logger.info("=== Pipeline complete: %d signals saved for %s ===", len(saved), trade_date)
-    return {"status": "ok", "message": f"Analyzed {len(saved)} stocks", "signals": saved}
+    return {"status": "ok", "message": f"Analyzed {len(saved)} stocks (source: {data_source})", "signals": saved}
+
+
+def run_pipeline_with_sample_data(trade_date=None):
+    """Run the pipeline with sample data — works anytime, no NSE dependency.
+
+    Uses realistic sample pre-market data for 5 F&O stocks so you can
+    test the Claude scoring and DB save flow without waiting for market hours.
+    Requires: ANTHROPIC_API_KEY set, PostgreSQL running.
+    """
+    from market_analyst.collectors.nse_collector import PreMarketEntry, MarketSnapshotData
+
+    trade_date = trade_date or today_ist()
+    logger.info("=== Starting TEST pipeline with sample data for %s ===", trade_date)
+
+    pre_market = [
+        PreMarketEntry(symbol="RELIANCE", previous_close=2450.0, iep=2485.0, change=35.0, change_percent=1.43,
+                       final_quantity=250000, total_buy_quantity=180000, total_sell_quantity=70000,
+                       last_price=2485.0, year_high=2850.0, year_low=2100.0),
+        PreMarketEntry(symbol="TCS", previous_close=3820.0, iep=3775.0, change=-45.0, change_percent=-1.18,
+                       final_quantity=120000, total_buy_quantity=45000, total_sell_quantity=75000,
+                       last_price=3775.0, year_high=4250.0, year_low=3400.0),
+        PreMarketEntry(symbol="HDFCBANK", previous_close=1650.0, iep=1672.0, change=22.0, change_percent=1.33,
+                       final_quantity=450000, total_buy_quantity=300000, total_sell_quantity=150000,
+                       last_price=1672.0, year_high=1800.0, year_low=1420.0),
+        PreMarketEntry(symbol="INFY", previous_close=1580.0, iep=1555.0, change=-25.0, change_percent=-1.58,
+                       final_quantity=300000, total_buy_quantity=100000, total_sell_quantity=200000,
+                       last_price=1555.0, year_high=1750.0, year_low=1350.0),
+        PreMarketEntry(symbol="BAJFINANCE", previous_close=6800.0, iep=6920.0, change=120.0, change_percent=1.76,
+                       final_quantity=80000, total_buy_quantity=55000, total_sell_quantity=25000,
+                       last_price=6920.0, year_high=7500.0, year_low=5900.0),
+    ]
+
+    snapshot = MarketSnapshotData(
+        nifty_value=22450.0, nifty_change=0.85,
+        bank_nifty_value=47200.0, bank_nifty_change=1.10,
+        india_vix=14.5, advances=32, declines=18, advance_decline_ratio=1.78,
+    )
+
+    _save_market_snapshot(trade_date, snapshot, pre_market)
+
+    market_news = collect_market_news()
+
+    gap_stocks = pre_market  # all sample stocks are F&O eligible
+
+    logger.info("Enriching %d sample stocks with option chains and news...", len(gap_stocks))
+    stocks_data = []
+    for entry in gap_stocks:
+        oc = collect_option_chain(entry.symbol)
+        news = collect_news(entry.symbol)
+        vol = collect_volume_data(entry.symbol)
+        vwap = collect_vwap_data(entry.symbol)
+
+        stocks_data.append({
+            "pre_market": asdict(entry),
+            "option_chain": {
+                "symbol": oc.symbol,
+                "underlying_value": oc.underlying_value,
+                "expiry_dates": oc.expiry_dates[:3],
+                "entries_count": len(oc.entries),
+                "near_atm_entries": _get_near_atm_entries(oc),
+            },
+            "news": [{"headline": n.headline, "source": n.source} for n in news[:10]],
+            "volume": asdict(vol),
+            "vwap": asdict(vwap),
+            "lot_size": get_lot_size(entry.symbol),
+        })
+
+    logger.info("Scoring with Claude (%s)...", CLAUDE_MODEL)
+    scored = _score_with_claude(snapshot, market_news, stocks_data)
+    if not scored:
+        return {"status": "error", "message": "Claude scoring failed. Check ANTHROPIC_API_KEY.", "signals": []}
+
+    logger.info("Saving %d signals to database...", len(scored))
+    saved = _save_signals(trade_date, gap_stocks, scored)
+
+    logger.info("=== TEST pipeline complete: %d signals saved ===", len(saved))
+    return {"status": "ok", "message": f"Analyzed {len(saved)} stocks (source: sample-data)", "signals": saved}
 
 
 def _get_near_atm_entries(oc, count=5):

@@ -15,6 +15,7 @@ NSE_PRE_MARKET_URL = NSE_BASE_URL + "/api/market-data-pre-open?key=NIFTY"
 NSE_OPTION_CHAIN_URL = NSE_BASE_URL + "/api/option-chain-indices?symbol="
 NSE_EQUITY_OPTION_CHAIN_URL = NSE_BASE_URL + "/api/option-chain-equities?symbol="
 NSE_INDEX_URL = NSE_BASE_URL + "/api/allIndices"
+NSE_NIFTY50_URL = NSE_BASE_URL + "/api/equity-stockIndices?index=NIFTY%2050"
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 DEFAULT_TIMEOUT = 30
@@ -185,6 +186,51 @@ def _parse_option_chain(data: dict, symbol: str) -> OptionChainData:
         result.entries.append(entry)
 
     return result
+
+
+def collect_live_equity_data(timeout: int = DEFAULT_TIMEOUT) -> list[PreMarketEntry]:
+    """Fetches live NIFTY 50 equity data as a fallback when pre-market is closed.
+
+    Converts live price data into PreMarketEntry format by using previousClose
+    to compute gap/change fields, so the pipeline can run during market hours
+    or even after market close (using last traded prices).
+    """
+    logger.info("Collecting live NIFTY 50 equity data (fallback)...")
+    try:
+        session = _build_session(timeout)
+        response = session.get(NSE_NIFTY50_URL, timeout=timeout)
+        response.raise_for_status()
+        return _parse_live_equity(response.json())
+    except Exception as e:
+        logger.error("Failed to collect live equity data: %s", e)
+        return []
+
+
+def _parse_live_equity(data: dict) -> list[PreMarketEntry]:
+    entries = []
+    for item in data.get("data", []):
+        symbol = item.get("symbol", "")
+        if not symbol or symbol == "NIFTY 50":
+            continue
+        prev_close = item.get("previousClose", 0)
+        last_price = item.get("lastPrice", 0)
+        change = last_price - prev_close if prev_close else 0
+        change_pct = (change / prev_close * 100) if prev_close else 0
+
+        entries.append(PreMarketEntry(
+            symbol=symbol,
+            previous_close=prev_close,
+            iep=last_price,
+            change=change,
+            change_percent=change_pct,
+            final_quantity=item.get("totalTradedVolume", 0),
+            total_buy_quantity=item.get("totalTradedVolume", 0),
+            total_sell_quantity=0,
+            last_price=last_price,
+            year_high=item.get("yearHigh", 0),
+            year_low=item.get("yearLow", 0),
+        ))
+    return entries
 
 
 def _parse_market_snapshot(data: dict) -> MarketSnapshotData:

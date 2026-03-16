@@ -14,6 +14,22 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-16
 
+### Commit: Add live equity fallback and test endpoint for pipeline
+
+**Files modified:**
+- `market_analyst/collectors/nse_collector.py` — Added `collect_live_equity_data()` that fetches NIFTY 50 live prices as fallback when pre-market is closed
+- `market_analyst/pipeline.py` — Added `run_pipeline_with_sample_data()` for testing anytime; main pipeline now falls back to live equity data
+- `market_analyst/app.py` — Added `POST /api/analyst/run-test` endpoint
+
+**Functional impact:**
+- `POST /api/analyst/run` now tries live equity data when pre-market is unavailable (works during market hours 9:15-3:30 PM)
+- `POST /api/analyst/run-test` uses sample data for 5 F&O stocks (RELIANCE, TCS, HDFCBANK, INFY, BAJFINANCE) — works anytime, only requires ANTHROPIC_API_KEY + PostgreSQL
+- Response includes `source` field indicating data origin: `pre-market`, `live-equity`, or `sample-data`
+
+**Breaking changes:** None
+
+---
+
 ### Commit: Add analysis pipeline — collect, score with Claude, save signals
 
 **Files added:**
