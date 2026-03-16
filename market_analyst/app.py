@@ -18,6 +18,19 @@ from market_analyst.csv_export import export_to_csv
 app = Flask(__name__)
 
 
+@app.route("/")
+def index():
+    return jsonify({
+        "agent": "market-analyst",
+        "status": "UP",
+        "endpoints": {
+            "health": "/api/analyst/health",
+            "signals": "/api/analyst/signals/<trade_date>  (e.g. /api/analyst/signals/2026-03-16)",
+            "export_csv": "POST /api/analyst/export-csv?date=YYYY-MM-DD",
+        },
+    })
+
+
 @app.route("/api/analyst/health")
 def health():
     return jsonify({"status": "UP", "agent": "market-analyst", "time": str(now_ist())})
