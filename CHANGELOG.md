@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Full analysis pipeline (`market_analyst/pipeline.py`): collect NSE pre-market data → enrich with option chains & news → score with Claude → save to DB
+- `POST /api/analyst/run` endpoint to trigger the pipeline with optional `date`, `min_gap`, `top_n` params
+- `anthropic` dependency in `requirements.txt` for Claude API scoring
+
 ### Fixed
 - Market Analyst agent now returns useful JSON at root URL (`/`) instead of 404, listing all available endpoints
 

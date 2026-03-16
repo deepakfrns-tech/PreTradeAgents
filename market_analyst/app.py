@@ -5,6 +5,7 @@ Collects NSE pre-market data, scrapes news sentiment, analyzes options flow,
 and produces Claude-scored trading signals saved to the stock_analysis table.
 """
 
+import logging
 import os
 from datetime import date
 
@@ -14,6 +15,9 @@ from shared.database import SessionLocal
 from shared.models import StockAnalysis
 from shared.time_utils import today_ist, now_ist
 from market_analyst.csv_export import export_to_csv
+from market_analyst.pipeline import run_pipeline
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 
 app = Flask(__name__)
 
@@ -25,6 +29,7 @@ def index():
         "status": "UP",
         "endpoints": {
             "health": "/api/analyst/health",
+            "run_pipeline": "POST /api/analyst/run?date=YYYY-MM-DD&min_gap=0.5&top_n=10",
             "signals": "/api/analyst/signals/<trade_date>  (e.g. /api/analyst/signals/2026-03-16)",
             "export_csv": "POST /api/analyst/export-csv?date=YYYY-MM-DD",
         },
@@ -34,6 +39,19 @@ def index():
 @app.route("/api/analyst/health")
 def health():
     return jsonify({"status": "UP", "agent": "market-analyst", "time": str(now_ist())})
+
+
+@app.route("/api/analyst/run", methods=["POST"])
+def run_analysis():
+    trade_date_str = request.args.get("date", str(today_ist()))
+    d = date.fromisoformat(trade_date_str)
+    min_gap = request.args.get("min_gap", type=float)
+    top_n = request.args.get("top_n", type=int)
+
+    result = run_pipeline(trade_date=d, min_gap=min_gap, top_n=top_n)
+
+    status_code = 200 if result["status"] == "ok" else 500
+    return jsonify(result), status_code
 
 
 @app.route("/api/analyst/signals/<trade_date>")
