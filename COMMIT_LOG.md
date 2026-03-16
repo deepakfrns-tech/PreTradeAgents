@@ -14,6 +14,28 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-16
 
+### Commit: Add analysis pipeline — collect, score with Claude, save signals
+
+**Files added:**
+- `market_analyst/pipeline.py` — Full orchestration: NSE pre-market collection → option chain + news enrichment → Claude scoring → DB save
+
+**Files modified:**
+- `market_analyst/app.py` — Added `POST /api/analyst/run` endpoint, logging setup, pipeline import
+- `requirements.txt` — Added `anthropic==0.49.0` dependency
+
+**Functional impact:**
+- `POST /api/analyst/run` triggers the full analysis pipeline for a given trade date
+- Pipeline collects NSE pre-market data, filters for F&O stocks with significant gaps (default ≥0.5%)
+- For each gap stock: collects option chain, news, volume/VWAP data
+- Sends enriched data to Claude for scoring (composite score, direction, entry/exit levels)
+- Saves StockAnalysis records to PostgreSQL (upserts on trade_date + symbol)
+- Also saves MarketSnapshot with broad market data
+- Supports query params: `date`, `min_gap`, `top_n`
+
+**Breaking changes:** None
+
+---
+
 ### Commit: Add root route to Market Analyst agent to fix 404 on /
 
 **Files modified:**
