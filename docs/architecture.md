@@ -2,7 +2,7 @@
 
 ## System Overview
 
-PreTradeAgents is a multi-agent trading analysis system built on a microservices architecture. Three independent Spring Boot agents plus a web dashboard collaborate through a shared PostgreSQL database to perform pre-market analysis, trade approval, paper trade execution, and strategy learning. Each component can run independently.
+PreTradeAgents is a multi-agent trading analysis system built on a microservices architecture. Three independent Python/Flask agents plus a web dashboard collaborate through a shared PostgreSQL database to perform pre-market analysis, trade approval, paper trade execution, and strategy learning. Each component can run independently.
 
 ## High-Level Architecture
 
@@ -72,65 +72,50 @@ PreTradeAgents is a multi-agent trading analysis system built on a microservices
 
 ```
 ┌─────────────────────┐     ┌──────────────────┐
-│    shared-db         │     │   shared-utils    │
-│  (JPA entities,     │     │  (NseClient,      │
-│   Flyway migrations)│     │   TimeUtils,      │
-│                     │     │   Formatters,      │
-│                     │     │   LotSizes)        │
-└──────────┬──────────┘     └────────┬───────────┘
-           │                          │
-           │    ┌─────────────────────┤
+│   shared/            │     │   shared-db/      │
+│  (SQLAlchemy models, │     │  (SQL migrations)  │
+│   time_utils,        │     │                    │
+│   formatters,        │     │                    │
+│   lot_sizes,         │     │                    │
+│   nse_client)        │     │                    │
+└──────────┬──────────┘     └────────────────────┘
+           │
+           │    ┌─────────────────────┐
            │    │                     │
-     ┌─────▼────▼───┐  ┌──────────────┐  ┌─────────────▼──┐  ┌──────────────────┐
-     │agent-market-  │  │trade-        │  │agent-trade-    │  │agent-learning-   │
-     │analyst        │  │dashboard     │  │executor        │  │summary           │
-     │(8081)         │  │(8080)        │  │(8082)          │  │(8083)            │
+     ┌─────▼────▼───┐  ┌──────────────┐  ┌────────────────┐  ┌──────────────────┐
+     │market_analyst │  │trade_        │  │trade_executor  │  │learning_summary  │
+     │(8081)         │  │dashboard     │  │(8082)          │  │(8083)            │
+     │               │  │(8080)        │  │                │  │                  │
      └───────────────┘  └──────────────┘  └────────────────┘  └──────────────────┘
 ```
 
 ### Package Structure
 
 ```
-com.pretrade
-├── shared.models          # JPA entities (shared-db)
-│   ├── MarketSnapshot
-│   ├── StockAnalysis
-│   ├── TradeDecision
-│   ├── PaperTrade
-│   ├── DailySummary
-│   └── StrategyLearning
-├── utils                  # Utilities (shared-utils)
-│   ├── NseClient          # NSE API HTTP client
-│   ├── TimeUtils          # IST timezone utilities
-│   ├── Formatters         # INR/percentage formatters
-│   └── LotSizes           # F&O lot size registry
-├── analyst                # Agent 1 (agent-market-analyst)
-│   ├── MarketAnalystApplication
-│   ├── config.AnalystSettings
-│   ├── collectors
-│   │   ├── NseCollector
-│   │   ├── TechnicalCollector
-│   │   └── NewsCollector
-│   ├── service.CsvExportService
-│   ├── controller.AnalystController
-│   └── db.StockAnalysisRepository
-├── dashboard              # Trade Dashboard (trade-dashboard)
-│   ├── TradeDashboardApplication
-│   ├── controller.DashboardController
-│   ├── service.CsvParserService
-│   └── db.{StockAnalysisRepository, TradeDecisionRepository}
-├── executor               # Agent 2 (agent-trade-executor)
-│   ├── TradeExecutorApplication
-│   ├── config.ExecutorSettings
-│   ├── service.TradeExecutionService
-│   ├── controller.ExecutorController
-│   └── db.{TradeDecisionRepository, PaperTradeRepository}
-└── learner                # Agent 3 (agent-learning-summary)
-    ├── LearningSummaryApplication
-    ├── config.LearnerSettings
-    ├── service.LearningSummaryService
-    ├── controller.LearnerController
-    └── db.{PaperTradeRepository, DailySummaryRepository, StrategyLearningRepository, ...}
+PreTradeAgents/
+├── shared/                    # Shared library
+│   ├── models.py              # SQLAlchemy models (6 tables)
+│   ├── database.py            # DB session management
+│   ├── time_utils.py          # IST timezone utilities
+│   ├── formatters.py          # INR/percentage formatters
+│   ├── lot_sizes.py           # F&O lot size registry
+│   └── nse_client.py          # NSE API HTTP client
+├── market_analyst/            # Agent 1
+│   ├── app.py                 # Flask app (port 8081)
+│   ├── csv_export.py          # CSV export service
+│   └── collectors/
+│       ├── nse_collector.py   # Pre-market + option chain data
+│       ├── news_collector.py  # Google News + MoneyControl
+│       └── technical_collector.py  # Volume/VWAP calculations
+├── trade_dashboard/           # Web Dashboard
+│   ├── app.py                 # Flask app (port 8080)
+│   ├── csv_parser.py          # CSV parsing service
+│   ├── templates/             # Jinja2 templates
+│   └── static/css/            # Stylesheets
+├── trade_executor/            # Agent 2
+│   └── app.py                 # Flask app (port 8082) + APScheduler
+└── learning_summary/          # Agent 3
+    └── app.py                 # Flask app (port 8083)
 ```
 
 ## Data Flow
@@ -138,19 +123,19 @@ com.pretrade
 ### 1. Pre-Market Phase (9:00-9:15 AM IST)
 
 ```
-NSE Pre-Market API ──> NseCollector.collectPreMarketData()
+NSE Pre-Market API ──> nse_collector.collect_pre_market_data()
                            │
                            ▼
-                    List<PreMarketEntry>
+                    List[PreMarketEntry]
                     (symbol, gap%, IEP, volume)
                            │
-Google News RSS ────> NewsCollector.collectNews(symbol)
+Google News RSS ────> news_collector.collect_news(symbol)
                            │
                            ▼
-                    List<NewsItem>
+                    List[NewsItem]
                     (headline, source, date)
                            │
-NSE Option Chain ──> NseCollector.collectOptionChain(symbol)
+NSE Option Chain ──> nse_collector.collect_option_chain(symbol)
                            │
                            ▼
                     OptionChainData
@@ -160,12 +145,12 @@ NSE Option Chain ──> NseCollector.collectOptionChain(symbol)
                            │
                            ▼
                     StockAnalysis (saved to DB)
-                    - compositeScore (0-100)
-                    - signalDirection (BULLISH/BEARISH)
+                    - composite_score (0-100)
+                    - signal_direction (BULLISH/BEARISH)
                     - entry parameters (strike, SL, target)
-                    - claudeReasoning (AI explanation)
+                    - claude_reasoning (AI explanation)
                            │
-                    CsvExportService ──> trade-signals-YYYY-MM-DD.csv
+                    csv_export ──> trade-signals-YYYY-MM-DD.csv
 ```
 
 ### 1.5. Dashboard Phase (before 9:15 AM IST)
@@ -173,7 +158,7 @@ NSE Option Chain ──> NseCollector.collectOptionChain(symbol)
 ```
 CSV File (from Market Analyst) ──> Upload to Dashboard (port 8080)
                                          │
-                                    CsvParserService ──> StockAnalysis (saved to DB)
+                                    csv_parser ──> StockAnalysis (saved to DB)
                                          │
                                     Dashboard View (scores, direction, reasoning)
                                          │
@@ -183,7 +168,7 @@ CSV File (from Market Analyst) ──> Upload to Dashboard (port 8080)
 ### 2. Market Hours Phase (9:15 AM - 3:30 PM IST)
 
 ```
-TradeDecision (APPROVED, from DB) ──> @Scheduled 9:15 AM IST trigger
+TradeDecision (APPROVED, from DB) ──> APScheduler 9:15 AM IST trigger
                                     │
                                     ▼
                             PaperTrade (created on entry)
@@ -241,12 +226,12 @@ StrategyLearning (N per day)
 ### Key Columns
 
 **StockAnalysis** - Core signal with multi-factor scoring:
-- Gap analysis: `gapPercent`, `gapDirection`, `gapCategory`, `gapScore`
-- Sentiment: `sentimentScore`, `sentimentLevel`, `sentimentReasoning`
-- Volume: `volumeRatio`, `volumeLevel`, `vwapPosition`, `volumeScore`
-- Options: `pcr`, `oiBuildup`, `maxPain`, `ivPercentile`, `oiScore`
-- AI output: `compositeScore`, `signalDirection`, `claudeReasoning`
-- Entry params: `entryStrike`, `estimatedPremium`, `stopLoss`, `target`, `riskRewardRatio`
+- Gap analysis: `gap_percent`, `gap_direction`, `gap_category`, `gap_score`
+- Sentiment: `sentiment_score`, `sentiment_level`, `sentiment_reasoning`
+- Volume: `volume_ratio`, `volume_level`, `vwap_position`, `volume_score`
+- Options: `pcr`, `oi_buildup`, `max_pain`, `iv_percentile`, `oi_score`
+- AI output: `composite_score`, `signal_direction`, `claude_reasoning`
+- Entry params: `entry_strike`, `estimated_premium`, `stop_loss`, `target`, `risk_reward_ratio`
 
 ### Scoring Weights (configurable)
 
@@ -274,10 +259,9 @@ StrategyLearning (N per day)
 
 ### API Configuration
 
-```yaml
-anthropic:
-  api-key: ${ANTHROPIC_API_KEY}
-  base-url: https://api.anthropic.com/v1
+```python
+# Via environment variable
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
 ```
 
 ## NSE API Integration
@@ -299,33 +283,24 @@ anthropic:
 
 ## Configuration
 
-Each agent reads from `src/main/resources/application.yml`:
+All agents read from environment variables:
 
 ### Common (all agents)
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-  jpa:
-    hibernate:
-      ddl-auto: validate
-  flyway:
-    locations: classpath:db/migration
+```bash
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=pretrade
+DB_USERNAME=pretrade
+DB_PASSWORD=pretrade
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ### Agent-Specific
 
-- **analyst.gapThreshold**: Minimum gap % to trigger analysis (default: 0.5)
-- **analyst.minCompositeScore**: Minimum score for signal generation (default: 60.0)
-- **analyst.topNStocks**: Number of top stocks to analyze (default: 20)
-- **executor.maxPositions**: Maximum simultaneous paper trades
-- **executor.maxLossPercent**: Daily loss limit trigger
-- **executor.trailingStopPercent**: Trailing stop loss percentage
-- **learner.minConfidence**: Minimum confidence for pattern extraction
-- **learner.lookbackDays**: Number of days to analyze for patterns
+- **analyst**: gap_threshold (0.5%), min_composite_score (60.0), top_n_stocks (20)
+- **executor**: max_positions (5), max_loss_per_trade (₹2,000), trailing_stop_percent (30%)
+- **learner**: min_confidence (0.7), lookback_days (30), min_occurrences (3)
 
 ## Security Considerations
 

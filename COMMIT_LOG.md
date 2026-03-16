@@ -12,6 +12,34 @@ When making changes, add an entry under the current date with:
 
 ---
 
+## 2026-03-16
+
+### Commit: Update all documentation to reference Python/Flask instead of Java/Spring Boot
+
+**Files modified:**
+- `README.md` — Rewritten: Python prereqs, pip install, python -m commands, updated project structure
+- `docs/architecture.md` — Rewritten: Python module structure, SQLAlchemy models, Flask apps, env var config
+- `docs/runbooks/local-deployment.md` — Rewritten: Python prereqs, pip install, python -m commands
+- `docs/runbooks/build-and-deploy.md` — Rewritten: pip install, python runners, Docker deployment
+- `docs/runbooks/database-operations.md` — Rewritten: SQLAlchemy models, SQL migrations, Python paths
+- `docs/decisions/001-multi-agent-architecture.md` — Updated: Python/Flask agents
+- `docs/decisions/003-no-parent-pom.md` — Rewritten: Shared library pattern for Python
+- `docs/decisions/004-trade-dashboard-csv-workflow.md` — Updated: Flask + Jinja2
+- `.claude/skills/release/SKILL.md` — Rewritten: pytest, pip, Python workflow
+- `.claude/skills/refactor/SKILL.md` — Rewritten: Python refactoring rules
+- `.claude/skills/debug/SKILL.md` — Rewritten: Python debugging workflow
+- `.claude/skills/code-review/SKILL.md` — Rewritten: Python code review checklist
+- `.claude/skills/doc-update/SKILL.md` — Updated: Python file paths and commands
+- `.claude/hooks/README.md` — Updated: Python import checks, pytest commands
+
+**Functional impact:**
+- All documentation, runbooks, ADRs, and skills now accurately describe the Python/Flask codebase
+- No more references to Java, Maven, JDK, JARs, Spring Boot, JPA, Lombok, Thymeleaf in active documentation
+
+**Breaking changes:** None (documentation only)
+
+---
+
 ## 2026-03-15
 
 ### Commit: Complete Java to Python refactor — migrate entire codebase
@@ -278,7 +306,7 @@ When making changes, add an entry under the current date with:
 ### Commit: <short description>
 
 **Files changed:**
-- `path/to/file.java` - Description of change
+- `path/to/file.py` - Description of change
 
 **Functional impact:**
 - What behavior changed

@@ -2,7 +2,7 @@
 
 ## Option 1: Docker Compose (Recommended)
 
-One command to start everything — PostgreSQL + all 3 agents.
+One command to start everything — PostgreSQL + all agents + dashboard.
 
 ### Prerequisites
 - Docker and Docker Compose installed
@@ -54,8 +54,7 @@ cp .env.example .env
 Each agent can run independently. Only PostgreSQL is required.
 
 ### Prerequisites
-- Java 21 JDK
-- Maven 3.8+
+- Python 3.11+
 - Docker (for PostgreSQL only)
 
 ### Steps
@@ -64,8 +63,8 @@ Each agent can run independently. Only PostgreSQL is required.
 # 1. Start PostgreSQL via Docker
 ./scripts/run.sh postgres
 
-# 2. Build everything
-./scripts/build.sh
+# 2. Install dependencies
+pip install -r requirements.txt
 
 # 3. Run individual agents (each in a separate terminal)
 ./scripts/run.sh dashboard      # Trade Dashboard (port 8080) — always needed
@@ -84,8 +83,7 @@ Each agent can run independently. Only PostgreSQL is required.
 ## Option 3: Manual (No Docker, No Scripts)
 
 ### Prerequisites
-- Java 21 JDK
-- Maven 3.8+
+- Python 3.11+
 - PostgreSQL 15+ running locally
 
 ### Steps
@@ -99,14 +97,17 @@ export DB_HOST=localhost DB_PORT=5432 DB_NAME=pretrade
 export DB_USERNAME=pretrade DB_PASSWORD=pretrade
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# 3. Build
-./scripts/build.sh
+# 3. Install dependencies
+pip install -r requirements.txt
 
-# 4. Run (each in a separate terminal)
-java -jar trade-dashboard/target/trade-dashboard-1.0.0-SNAPSHOT.jar
-java -jar agent-market-analyst/target/agent-market-analyst-1.0.0-SNAPSHOT.jar
-java -jar agent-trade-executor/target/agent-trade-executor-1.0.0-SNAPSHOT.jar
-java -jar agent-learning-summary/target/agent-learning-summary-1.0.0-SNAPSHOT.jar
+# 4. Apply migrations
+./scripts/run.sh init-db
+
+# 5. Run (each in a separate terminal)
+python -m trade_dashboard.app
+python -m market_analyst.app
+python -m trade_executor.app
+python -m learning_summary.app
 ```
 
 ---
@@ -116,8 +117,8 @@ java -jar agent-learning-summary/target/agent-learning-summary-1.0.0-SNAPSHOT.ja
 | Problem | Solution |
 |---------|----------|
 | Port 5432 in use | Stop existing PostgreSQL or change port in docker-compose.yml |
-| Port 8080/81/82/83 in use | Stop existing process or change in application.yml |
+| Port 8080/81/82/83 in use | Stop existing process: `lsof -i :PORT` then `kill PID` |
 | Docker build fails | Check Docker daemon is running; try `docker compose build --no-cache` |
 | DB connection refused | Wait for PostgreSQL healthcheck; check `docker compose logs postgres` |
-| "shared-db not found" (manual) | Run `cd shared-db && mvn clean install` first |
-| Flyway migration fails | Check if schema already exists; use `docker compose down -v` to reset |
+| ImportError on shared module | Run `pip install -r requirements.txt` from project root |
+| Migration fails | Check if schema already exists; use `docker compose down -v` to reset |

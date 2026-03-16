@@ -1,17 +1,17 @@
-# ADR-003: Independent Maven Modules (No Parent POM)
+# ADR-003: Shared Library Pattern (No Framework Coupling)
 
 ## Status
-Accepted
+Accepted (Updated: migrated from Java/Maven to Python)
 
 ## Context
-The project has 5 Maven modules. A parent POM would centralize dependency management but add coupling.
+The project has multiple agent modules that share common models and utilities. We need a way to share code without tight coupling.
 
 ## Decision
-Each module is an independent Maven project with its own `pom.xml`. Shared libraries (`shared-db`, `shared-utils`) are installed to local Maven repo and consumed as dependencies.
+All shared code lives in a single `shared/` Python package imported by all agents. Each agent is an independent Flask application with its own entry point. SQL migrations are maintained separately in `shared-db/migrations/`.
 
 ## Consequences
-- **Good**: Modules can use different Java versions (shared libs: Java 17, agents: Java 21)
-- **Good**: Simpler CI/CD — each module builds independently
-- **Good**: No version conflicts from parent POM overrides
-- **Bad**: Must manually keep Spring Boot version in sync across modules
-- **Bad**: Build order matters: shared-db → shared-utils → agents
+- **Good**: Simple import — all agents just `from shared import models, time_utils, formatters`
+- **Good**: No build order or package manager complexity
+- **Good**: Each agent can be developed and tested independently
+- **Bad**: Shared module changes affect all agents (mitigated by tests)
+- **Bad**: All agents must run from project root for imports to resolve

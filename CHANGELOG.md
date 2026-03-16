@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Entire codebase migrated from Java/Spring Boot to Python/Flask**
 - Removed all Java source code, Maven POMs, and Spring Boot configurations
 - Python code promoted from `py/` subdirectory to root-level modules
+- Updated all documentation to reference Python/Flask instead of Java/Spring Boot:
+  README.md, architecture.md, runbooks, ADRs, skills, hooks
 
 ### Added
 - `shared/` — SQLAlchemy models, database, time_utils, formatters, lot_sizes, nse_client

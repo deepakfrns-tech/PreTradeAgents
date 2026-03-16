@@ -10,7 +10,7 @@ The original architecture had agents communicating solely through the database w
 3. Operate agents independently of each other
 
 ## Decision
-Add a **Trade Dashboard** web application (Spring Boot + Thymeleaf) that:
+Add a **Trade Dashboard** web application (Flask + Jinja2) that:
 1. Accepts CSV files exported by the Market Analyst as the input mechanism
 2. Displays trade signals in a scored dashboard with all analysis details
 3. Allows users to select and approve trades, persisting them as TradeDecisions
@@ -32,7 +32,7 @@ The CSV file acts as a **portable handoff artifact** between Agent 1 and the das
 ### Negative
 - Extra manual step (upload CSV) vs. automatic DB-to-DB flow
 - Dashboard is a new module to maintain
-- CSV format must stay in sync with StockAnalysis entity fields
+- CSV format must stay in sync with StockAnalysis model fields
 
 ### Mitigations
 - Dashboard also reads directly from DB if signals were written by the analyst
