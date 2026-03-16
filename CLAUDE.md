@@ -2,45 +2,41 @@
 
 ## Purpose
 
-PreTradeAgents is a multi-agent Claude-powered trading system for NSE (India). Three Spring Boot agents + a web dashboard analyze pre-market data, execute paper trades, and extract strategy learnings — all coordinated through a shared PostgreSQL database.
+PreTradeAgents is a multi-agent Claude-powered trading system for NSE (India). Three Python/Flask agents + a web dashboard analyze pre-market data, execute paper trades, and extract strategy learnings — all coordinated through a shared PostgreSQL database.
 
 ## Repo Map
 
 ```
 PreTradeAgents/
-├── agent-market-analyst/        # Agent 1 (port 8081) - NSE data + Claude scoring + CSV export
-├── trade-dashboard/             # Web Dashboard (port 8080) - Upload CSV, view signals, approve trades
-├── agent-trade-executor/        # Agent 2 (port 8082) - Paper trade execution at 9:15 AM
-├── agent-learning-summary/      # Agent 3 (port 8083) - Pattern mining + strategy learnings
-├── shared-db/                   # JPA entities + Flyway migrations (6 tables)
-├── shared-utils/                # NseClient, TimeUtils, Formatters, LotSizes
-├── docs/                        # Architecture, ADRs, runbooks (progressive context)
-│   ├── architecture.md
-│   ├── decisions/               # Architecture Decision Records
-│   └── runbooks/                # Operational guides
+├── shared/                      # Shared library — models, DB, time_utils, formatters, lot_sizes, nse_client
+├── market_analyst/              # Agent 1 (port 8081) — NSE data collectors + Claude scoring + CSV export
+│   └── collectors/              # NseCollector, NewsCollector, TechnicalCollector
+├── trade_dashboard/             # Web Dashboard (port 8080) — Upload CSV, view signals, approve trades
+│   ├── templates/               # Jinja2 templates (base, dashboard, upload)
+│   └── static/css/              # Dark-themed responsive styling
+├── trade_executor/              # Agent 2 (port 8082) — Paper trade execution at 9:15 AM
+├── learning_summary/            # Agent 3 (port 8083) — Pattern mining + strategy learnings
+├── shared-db/migrations/        # SQL migrations (7 migrations, applied in order)
+├── tests/                       # pytest test suite
+├── docs/                        # Architecture, ADRs, runbooks
+├── scripts/                     # run.sh, build.sh, test.sh
+├── Dockerfile.*                 # Per-service Dockerfiles
 ├── docker-compose.yml           # Local deployment with profiles
-├── scripts/                     # Build, test, run, and deployment scripts
-└── .claude/
-    ├── settings.json            # Claude Code project settings
-    ├── skills/                  # Reusable AI workflows
-    └── hooks/                   # Automated guardrails
+├── requirements.txt             # Python dependencies
+└── .claude/                     # Claude Code settings, skills, hooks
 ```
-
-Each module has its own `CLAUDE.md` with module-specific context.
 
 ## Rules
 
 ### MUST
-- Build order: `shared-db` → `shared-utils` → agents (no parent POM)
-- All timestamps via `TimeUtils` (IST / Asia/Kolkata) — never system default
-- All currency via `Formatters` (Indian numbering: lakhs/crores)
-- Validate F&O symbols via `LotSizes` before any trade logic
-- New DB entities → create Flyway migration in `shared-db/migrations/V00N__*.sql`
-- DTOs as static inner classes with `@Data @Builder @NoArgsConstructor @AllArgsConstructor`
-- Run `mvn test` in affected modules before committing
+- All timestamps via `shared.time_utils` (IST / Asia/Kolkata) — never `datetime.now()` directly
+- All currency via `shared.formatters` (Indian numbering: lakhs/crores)
+- Validate F&O symbols via `shared.lot_sizes` before any trade logic
+- New DB changes → create migration in `shared-db/migrations/V00N__*.sql`
+- Run `python -m pytest tests/` before committing
 
 ### MUST NOT
-- Never modify Flyway migrations that have already been applied
+- Never modify migrations that have already been applied
 - Never hardcode API keys — use environment variables
 - Never use system default timezone — always `Asia/Kolkata`
 - Never call NSE API without session warmup (hit base URL first)
@@ -50,14 +46,9 @@ Each module has its own `CLAUDE.md` with module-specific context.
 
 **After every code change, you MUST update these files before committing:**
 
-1. **`CHANGELOG.md`** — Add entry under `[Unreleased]` describing what changed (Added/Changed/Fixed/Removed)
+1. **`CHANGELOG.md`** — Add entry under `[Unreleased]` describing what changed
 2. **`COMMIT_LOG.md`** — Add entry with: files changed, functional impact, breaking changes
-3. **Module `CLAUDE.md`** — If you changed a module's behavior, update its local CLAUDE.md
-4. **`docs/architecture.md`** — If you changed system design, data flow, or module relationships
-5. **`docs/decisions/`** — If you made a significant architecture decision, create a new ADR
-6. **`docs/runbooks/`** — If you changed build, deploy, or operational procedures
-
-**This is not optional.** Stale docs are worse than no docs. Update them as part of the same commit.
+3. **`docs/architecture.md`** — If you changed system design, data flow, or module relationships
 
 ### Environment Variables
 
@@ -68,10 +59,11 @@ DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, ANTHROPIC_API_KEY, CSV_OUTP
 ## Commands
 
 ```bash
-# Build everything
-./scripts/build.sh
+# Setup
+pip install -r requirements.txt
 
-# Test everything
+# Test
+python -m pytest tests/ -v
 ./scripts/test.sh
 
 # Run independently (each in separate terminal)
@@ -84,14 +76,5 @@ DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, ANTHROPIC_API_KEY, CSV_OUTP
 # Docker deployment with profiles
 docker compose --profile all up -d           # Start everything
 docker compose --profile dashboard up -d     # Start only dashboard + postgres
-docker compose --profile executor up -d      # Start only executor + postgres
 docker compose down                          # Stop all services
-
-# Build + run without Docker
-cd shared-db && mvn clean install && cd .. && cd shared-utils && mvn clean install && cd ..
-cd trade-dashboard && mvn clean package && cd ..
-java -jar trade-dashboard/target/trade-dashboard-1.0.0-SNAPSHOT.jar
-
-# Test a single module
-cd <module> && mvn test
 ```

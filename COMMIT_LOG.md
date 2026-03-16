@@ -14,6 +14,53 @@ When making changes, add an entry under the current date with:
 
 ## 2026-03-15
 
+### Commit: Complete Java to Python refactor — migrate entire codebase
+
+**Files added:**
+- `shared/{__init__,database,models,time_utils,formatters,lot_sizes,nse_client}.py` — Shared utilities
+- `market_analyst/{__init__,app,csv_export}.py` — Market Analyst agent
+- `market_analyst/collectors/{__init__,nse_collector,news_collector,technical_collector}.py` — Data collectors
+- `trade_dashboard/{__init__,app,csv_parser}.py` — Dashboard Flask app
+- `trade_dashboard/templates/{base,dashboard,upload}.html` — Jinja2 templates
+- `trade_dashboard/static/css/dashboard.css` — Dark-themed dashboard styling
+- `trade_executor/{__init__,app}.py` — Trade Executor with 9:15 AM scheduler
+- `learning_summary/{__init__,app}.py` — Learning Summary with pattern mining
+- `tests/test_{time_utils,formatters,lot_sizes,technical_collector,csv_parser}.py` — 40 pytest tests
+- `requirements.txt` — Python dependencies
+- `Dockerfile.{analyst,dashboard,executor,learner}` — Per-service Python Dockerfiles
+
+**Files removed:**
+- All Java source code under `agent-market-analyst/src/`, `agent-trade-executor/src/`, `agent-learning-summary/src/`, `trade-dashboard/src/`, `shared-db/src/`, `shared-utils/src/`
+- All Maven POM files
+- All Spring Boot Dockerfiles
+- `py/` subdirectory (code promoted to root level)
+
+**Files modified:**
+- `docker-compose.yml` — Updated for Python Dockerfiles
+- `scripts/run.sh` — Rewritten for Python agents
+- `scripts/build.sh` — Rewritten for Python (pip install + import verification)
+- `scripts/test.sh` — Rewritten for pytest
+- `.gitignore` — Updated for Python artifacts
+- `CLAUDE.md` — Rewritten for Python codebase
+- `CHANGELOG.md` — Updated with refactor details
+- `COMMIT_LOG.md` — This entry
+
+**Functional impact:**
+- Complete technology migration: Java/Spring Boot/Maven → Python/Flask/pip
+- Same database schema — Flyway migrations preserved in `shared-db/migrations/`
+- Same REST API endpoints — all agents maintain identical HTTP interfaces
+- Same ports: 8080 (dashboard), 8081 (analyst), 8082 (executor), 8083 (learner)
+- New: NseClient, NseCollector, NewsCollector, TechnicalCollector in Python
+- New: 40 pytest tests covering shared utilities and CSV parsing
+
+**Breaking changes:**
+- Java build tools (Maven, JDK) no longer required
+- Python 3.11+ and pip now required
+- Docker images changed from JRE-alpine to python:3.12-slim
+- Build/test/run scripts completely rewritten for Python
+
+---
+
 ### Commit: Add local execution guide for Python agents
 
 **Files added:**
