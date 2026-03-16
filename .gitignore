@@ -1,39 +1,22 @@
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.venv/
+venv/
+env/
 
-# IDE - IntelliJ
+# IDE
 .idea/
+.vscode/
 *.iml
 *.iws
 *.ipr
-out/
-
-# IDE - Eclipse
-.classpath
-.project
-.settings/
-bin/
-
-# IDE - VS Code
-.vscode/
-
-# Java
-*.class
-*.jar
-*.war
-*.ear
-*.log
-hs_err_pid*
-replay_pid*
 
 # OS
 .DS_Store
@@ -45,11 +28,9 @@ Thumbs.db
 .env.local
 *.env
 
-# Spring Boot
-*.pid
+# Output
+output/
+*.log
 
 # Docker
 docker-compose.override.yml
-py/__pycache__/
-py/**/__pycache__/
-*.pyc

@@ -6,83 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (BREAKING) — Complete Java to Python Refactor
+- **Entire codebase migrated from Java/Spring Boot to Python/Flask**
+- Removed all Java source code, Maven POMs, and Spring Boot configurations
+- Python code promoted from `py/` subdirectory to root-level modules
+
 ### Added
-- `py/LOCAL_SETUP.md` — Comprehensive local execution guide for all Python agents with prerequisites, environment setup, endpoint reference, workflow, and troubleshooting
-- **Trade Dashboard** web app (`trade-dashboard/`, port 8080) — upload CSV, view signals dashboard, select trades for execution
-  - CSV upload with drag-and-drop support and parsed signal import to DB
-  - Interactive dark-themed dashboard with signal scoring, direction badges, confidence indicators
-  - Trade approval workflow: select signals → persist as TradeDecision in DB
-  - Signal detail cards with Claude reasoning, risk warnings, options flow, gap analysis
-- **CSV Export** for Market Analyst agent — exports StockAnalysis signals to `trade-signals-YYYY-MM-DD.csv`
-  - REST endpoint `POST /api/analyst/export-csv` to generate and download CSV
-  - Configurable output directory via `CSV_OUTPUT_DIR` env var
-- **Trade Execution Service** with 9:15 AM IST scheduled trigger (`@Scheduled(cron)`)
-  - Reads approved TradeDecisions from DB at market open
-  - Creates PaperTrade entries with position limits and risk controls
-  - Position monitoring with trailing stop loss and EOD forced exit
-  - Manual trigger endpoint: `POST /api/executor/trigger`
-- **Learning Summary Service** with daily aggregation and pattern mining
-  - Generates DailySummary from trade results (win rate, PnL, profit factor)
-  - Mines direction bias and timing patterns from lookback period
-  - Produces StrategyLearning records with confidence scoring
-  - REST endpoints for summary generation and pattern mining
-- JPA repositories for all 3 agents and the dashboard
-- REST controllers with health endpoints for all agents
-- `scripts/run.sh` — run individual agents or full stack locally
-- Docker Compose profiles for independent service execution (`analyst`, `dashboard`, `executor`, `learner`)
+- `shared/` — SQLAlchemy models, database, time_utils, formatters, lot_sizes, nse_client
+- `shared/nse_client.py` — NSE API client with session warmup, retry logic, exponential backoff
+- `market_analyst/` — Flask REST API (port 8081) with CSV export
+- `market_analyst/collectors/nse_collector.py` — Pre-market data, option chains, market snapshots
+- `market_analyst/collectors/news_collector.py` — Google News RSS + MoneyControl scraping
+- `market_analyst/collectors/technical_collector.py` — Volume/VWAP calculations (stub for broker API)
+- `trade_dashboard/` — Flask web app (port 8080) with Jinja2 templates, CSV upload, trade approval
+- `trade_executor/` — Flask app (port 8082) with APScheduler 9:15 AM cron + position monitoring
+- `learning_summary/` — Flask app (port 8083) with daily summary aggregation + pattern mining
+- `tests/` — pytest test suite (40 tests) for time_utils, formatters, lot_sizes, technical_collector, csv_parser
+- `requirements.txt` — Python dependencies (Flask, SQLAlchemy, psycopg2, APScheduler, requests, pytest)
+- `Dockerfile.analyst`, `Dockerfile.dashboard`, `Dockerfile.executor`, `Dockerfile.learner` — Per-service Python Dockerfiles
+- `scripts/run.sh` — Run individual agents or full stack
+- `scripts/build.sh` — Install deps and verify imports, or build Docker images
+- `scripts/test.sh` — Run pytest test suite
 
-### Added (Python Implementation)
-- Complete Python + Flask reimplementation of all agents under `py/` directory
-  - `py/shared/` — SQLAlchemy models, database, time_utils, formatters, lot_sizes (matching existing DB schema)
-  - `py/market_analyst/` — CSV export service + Flask REST API (port 8081)
-  - `py/trade_dashboard/` — Flask web app with Jinja2 templates, CSV upload, signal dashboard, trade approval (port 8080)
-  - `py/trade_executor/` — APScheduler 9:15 AM cron trigger + position monitoring + Flask REST API (port 8082)
-  - `py/learning_summary/` — Daily summary aggregation, pattern mining, Flask REST API (port 8083)
-  - `py/requirements.txt` — Flask, SQLAlchemy, psycopg2, APScheduler, requests
-  - `py/run.sh` — Run each agent independently (setup, postgres, analyst, dashboard, executor, learner)
-
-### Changed
-- `scripts/build.sh` updated for 6 modules (added trade-dashboard), supports target module builds
-- `scripts/test.sh` updated to include trade-dashboard module
-- `docker-compose.yml` restructured with profiles and shared CSV volume
-- Agent applications updated to scan `com.pretrade.utils` package for shared beans
-
-### Previously Added
-- Docker Compose local deployment (`docker-compose.yml`) — one command to run everything
-- Dockerfiles for all 3 agents (multi-stage builds with JRE-alpine runtime)
-- `.dockerignore` to optimize Docker build context
-- `.env.example` template for environment variables
-- Build scripts: `scripts/build.sh`, `scripts/test.sh`, `scripts/local-deploy.sh`
-- `.claude/skills/doc-update/SKILL.md` — mandatory doc-update workflow skill
-- Pre-commit hook in `.claude/settings.json` — reminds to update docs before committing
-- `docs/runbooks/local-deployment.md` — Docker and manual deployment guide
-- Mandatory doc-update rules added to `CLAUDE.md` (MUST update CHANGELOG, COMMIT_LOG, module CLAUDE.md on every change)
-
-### Changed
-- CLAUDE.md updated with Docker commands and mandatory doc-update section
-- `.claude/settings.json` updated with Docker/script permissions and pre-commit hook
-- `.claude/hooks/README.md` rewritten with active hook documentation
-- README.md updated with Quick Start (Docker), scripts table, and deployment docs
-- `.gitignore` updated with Docker entries
-
-### Previously Added
-- CLAUDE.md rewritten to be concise (purpose, repo map, rules only) per best practices
-- `.claude/settings.json` with permissions (allowed/denied commands)
-- `.claude/skills/` — 4 reusable AI workflow skills (code-review, refactor, debug, release)
-- `.claude/hooks/README.md` — guardrail documentation for automated checks
-- `docs/decisions/` — 3 Architecture Decision Records (ADRs)
-- `docs/runbooks/` — Operational guides (build-and-deploy, database-operations)
-- Local `CLAUDE.md` files for all 5 modules
-- README.md with project overview, setup instructions, and usage guide
-- docs/architecture.md with system design, data flow diagrams, and module relationships
-- CHANGELOG.md for tracking version history
-- COMMIT_LOG.md for tracking commit logs and functional changes
-- .gitignore for Java/Maven/IDE artifacts
-- Unit tests for shared-utils (TimeUtils, Formatters, LotSizes, NseClient)
-- Unit tests for shared-db model classes (StockAnalysis, MarketSnapshot)
-- Unit tests for agent-market-analyst (AnalystSettings, TechnicalCollector, NseCollector)
-- Unit tests for agent-trade-executor (TradeExecutorApplication)
-- Unit tests for agent-learning-summary (LearningSummaryApplication)
+### Removed
+- All Java source code (`agent-market-analyst/src/`, `agent-trade-executor/src/`, etc.)
+- All Maven POM files
+- All Spring Boot configurations and Dockerfiles
+- `shared-db/src/` and `shared-utils/src/` (Java models and utilities)
+- `py/` subdirectory (code promoted to root level)
 
 ## [1.0.0] - 2026-03-15
 
