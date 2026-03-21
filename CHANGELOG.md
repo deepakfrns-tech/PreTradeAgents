@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Full analysis pipeline (`market_analyst/pipeline.py`): collect NSE pre-market data → enrich with option chains & news → score with Claude → save to DB
 - `POST /api/analyst/run` endpoint to trigger the pipeline with optional `date`, `min_gap`, `top_n` params
+- `POST /api/analyst/run-test` endpoint with sample data — works anytime without NSE dependency
+- Live equity data fallback (`collect_live_equity_data`) when pre-market data is unavailable (after 9:15 AM)
 - `anthropic` dependency in `requirements.txt` for Claude API scoring
 
 ### Fixed

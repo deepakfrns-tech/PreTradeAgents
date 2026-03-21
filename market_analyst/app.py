@@ -15,7 +15,7 @@ from shared.database import SessionLocal
 from shared.models import StockAnalysis
 from shared.time_utils import today_ist, now_ist
 from market_analyst.csv_export import export_to_csv
-from market_analyst.pipeline import run_pipeline
+from market_analyst.pipeline import run_pipeline, run_pipeline_with_sample_data
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 
@@ -29,7 +29,8 @@ def index():
         "status": "UP",
         "endpoints": {
             "health": "/api/analyst/health",
-            "run_pipeline": "POST /api/analyst/run?date=YYYY-MM-DD&min_gap=0.5&top_n=10",
+            "run_pipeline": "POST /api/analyst/run?date=YYYY-MM-DD&min_gap=0.5&top_n=10  (needs NSE market hours)",
+            "run_test": "POST /api/analyst/run-test?date=YYYY-MM-DD  (works anytime with sample data)",
             "signals": "/api/analyst/signals/<trade_date>  (e.g. /api/analyst/signals/2026-03-16)",
             "export_csv": "POST /api/analyst/export-csv?date=YYYY-MM-DD",
         },
@@ -49,6 +50,17 @@ def run_analysis():
     top_n = request.args.get("top_n", type=int)
 
     result = run_pipeline(trade_date=d, min_gap=min_gap, top_n=top_n)
+
+    status_code = 200 if result["status"] == "ok" else 500
+    return jsonify(result), status_code
+
+
+@app.route("/api/analyst/run-test", methods=["POST"])
+def run_test():
+    trade_date_str = request.args.get("date", str(today_ist()))
+    d = date.fromisoformat(trade_date_str)
+
+    result = run_pipeline_with_sample_data(trade_date=d)
 
     status_code = 200 if result["status"] == "ok" else 500
     return jsonify(result), status_code
