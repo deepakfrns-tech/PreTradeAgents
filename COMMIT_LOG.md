@@ -12,6 +12,22 @@ When making changes, add an entry under the current date with:
 
 ---
 
+## 2026-03-21
+
+### Commit: Fix socket permission error on Windows for Trade Dashboard
+
+**Files modified:**
+- `trade_dashboard/app.py` — Added `--port` CLI argument via `argparse`; wrapped `app.run()` in try/except to catch `OSError` with Windows errno 10013 (access denied) and errno 10048 (port in use), printing clear remediation instructions
+
+**Functional impact:**
+- Running on Windows no longer silently fails with a cryptic socket error
+- Users can now override the port via `--port` flag: `python -m trade_dashboard.app --port 5000`
+- Port still falls back to `PORT` env var, then defaults to 8080
+
+**Breaking changes:** None
+
+---
+
 ## 2026-03-16
 
 ### Commit: Add live equity fallback and test endpoint for pipeline

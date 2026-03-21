@@ -171,6 +171,36 @@ def health():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
+    import argparse
+    import socket
+
+    parser = argparse.ArgumentParser(description="Trade Dashboard")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ.get("PORT", 8080)),
+        help="Port to run the dashboard on (default: 8080, or PORT env var)",
+    )
+    args = parser.parse_args()
+    port = args.port
+
     print(f"Starting Trade Dashboard on port {port}")
-    app.run(host="0.0.0.0", port=port, debug=True)
+    try:
+        app.run(host="0.0.0.0", port=port, debug=True)
+    except OSError as e:
+        if "access permissions" in str(e).lower() or e.errno in (13, 10013):
+            print(
+                f"\nERROR: Cannot bind to port {port} — access denied.\n"
+                "On Windows, some ports are reserved by the OS or require admin rights.\n"
+                "Try a different port:\n"
+                f"  python -m trade_dashboard.app --port 5000\n"
+                f"  set PORT=5000 && python -m trade_dashboard.app\n"
+            )
+        elif "already in use" in str(e).lower() or e.errno in (98, 10048):
+            print(
+                f"\nERROR: Port {port} is already in use.\n"
+                "Stop the other process or choose a different port:\n"
+                f"  python -m trade_dashboard.app --port 5000\n"
+            )
+        else:
+            raise

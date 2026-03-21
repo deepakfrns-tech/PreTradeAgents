@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Trade Dashboard: handle Windows socket permission error (errno 10013) on port 8080 with a clear message and instructions to use `--port` or `PORT` env var
+
+### Added
+- Trade Dashboard: `--port` CLI argument so users can override the port without setting env vars (`python -m trade_dashboard.app --port 5000`)
+
 ### Added
 - Full analysis pipeline (`market_analyst/pipeline.py`): collect NSE pre-market data → enrich with option chains & news → score with Claude → save to DB
 - `POST /api/analyst/run` endpoint to trigger the pipeline with optional `date`, `min_gap`, `top_n` params
